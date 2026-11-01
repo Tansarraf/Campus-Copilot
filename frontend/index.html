@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Campus Copilot</title>
+<link rel="icon" href="assets/campus-copilot-logo.jpg" type="image/jpeg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css?v=change-password-1" />
+</head>
+<body>
+
+<div id="auth-screen" class="screen auth-split">
+  <aside class="auth-hero" aria-label="Campus Copilot introduction">
+    <div class="auth-hero-inner">
+      <div class="auth-brand">
+        <img
+          class="auth-brand-logo"
+          src="assets/campus-copilot-logo.jpg"
+          alt="Campus Copilot — Your Academic Assistant"
+          width="220"
+          height="120"
+        />
+      </div>
+
+      <h1 class="auth-hero-title">Your campus answers, grounded in official documents.</h1>
+      <p class="auth-hero-copy">
+        Ask about fees, hostel rules, scholarships, placements, exams, and circulars —
+        get cited answers from the indexed university corpus.
+      </p>
+
+      <ul class="auth-feature-list">
+        <li>
+          <span class="auth-feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
+          </span>
+          Document-grounded campus Q&amp;A with citations
+        </li>
+        <li>
+          <span class="auth-feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></svg>
+          </span>
+          Circulars, fees, hostel, scholarships &amp; more
+        </li>
+        <li>
+          <span class="auth-feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+          </span>
+          Secure student and admin access
+        </li>
+      </ul>
+    </div>
+  </aside>
+
+  <section class="auth-panel">
+    <div class="auth-panel-inner">
+      <!-- Student / default login -->
+      <div id="login-panel" class="auth-panel-view">
+        <h2 class="auth-panel-title">Welcome back</h2>
+        <p class="auth-panel-subtitle">Sign in to your campus portal.</p>
+
+        <form id="login-form" class="auth-form" method="post" action="#">
+          <label for="login-enrollment">Enrollment number</label>
+          <input type="text" id="login-enrollment" required inputmode="numeric" maxlength="11" autocomplete="username" placeholder="11-digit enrollment number" />
+
+          <label for="login-password">Password</label>
+          <div class="password-field">
+            <input type="password" id="login-password" required autocomplete="current-password" placeholder="••••••••" />
+            <button type="button" class="password-toggle" data-target="login-password" aria-label="Show password">
+              <svg class="icon-eye" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+
+          <button type="submit" class="btn-primary">Sign in</button>
+        </form>
+
+        <p class="auth-switch">
+          Don’t have an account?
+          <span class="muted-inline">Contact your campus administrator to request access.</span>
+        </p>
+        <p class="auth-admin-link">
+          Are you an administrator?
+          <button type="button" class="text-link subtle" data-show-panel="admin">Admin sign in</button>
+        </p>
+      </div>
+
+      <!-- Admin login -->
+      <div id="admin-panel" class="auth-panel-view hidden">
+        <h2 class="auth-panel-title">Admin sign in</h2>
+        <p class="auth-panel-subtitle">Sign in with your administrator credentials.</p>
+
+        <form id="admin-login-form" class="auth-form" method="post" action="#">
+          <label for="admin-username">Username</label>
+          <input type="text" id="admin-username" required autocomplete="username" placeholder="Username" />
+
+          <label for="admin-password">Password</label>
+          <div class="password-field">
+            <input type="password" id="admin-password" required autocomplete="current-password" placeholder="••••••••" />
+            <button type="button" class="password-toggle" data-target="admin-password" aria-label="Show password">
+              <svg class="icon-eye" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+
+          <button type="submit" class="btn-primary">Sign in as admin</button>
+        </form>
+
+        <p class="auth-switch">
+          <button type="button" class="text-link" data-show-panel="login">← Back to student sign in</button>
+        </p>
+      </div>
+
+      <p id="auth-error" class="error hidden"></p>
+    </div>
+  </section>
+</div>
+
+<div id="app-screen" class="screen hidden">
+  <header class="topbar">
+    <div class="brand brand-logo-link" aria-label="Campus Copilot">
+      <img
+        class="topbar-logo"
+        src="assets/campus-copilot-logo.jpg"
+        alt="Campus Copilot"
+        width="160"
+        height="56"
+      />
+    </div>
+    <nav class="nav student-app-nav">
+      <button class="nav-btn active" data-view="chat">Chat</button>
+      <button class="nav-btn" data-view="documents">Documents</button>
+      <button class="nav-btn" data-view="calendar">Student Calendar</button>
+      <button class="nav-btn admin-only hidden" data-view="admin">Admin</button>
+    </nav>
+    <div class="user-menu-wrap">
+      <button type="button" id="user-menu-btn" class="user-menu-btn" aria-haspopup="true" aria-expanded="false">
+        <span id="user-avatar" class="user-avatar" aria-hidden="true">?</span>
+        <span id="user-menu-label" class="user-menu-label"></span>
+        <span class="user-menu-caret" aria-hidden="true">▾</span>
+      </button>
+      <div id="user-menu-dropdown" class="user-menu-dropdown hidden" role="menu">
+        <button type="button" id="profile-menu-btn" role="menuitem">Profile</button>
+        <button type="button" id="change-password-menu-btn" role="menuitem">Change Password</button>
+        <button type="button" id="logout-btn" role="menuitem">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <div id="student-greeting-bar" class="greeting-bar student-only hidden">
+    <h2 id="student-greeting">Welcome!</h2>
+  </div>
+
+  <section id="onboarding-panel" class="onboarding-panel student-only hidden" aria-labelledby="onboarding-title">
+    <div class="onboarding-card">
+      <h2 id="onboarding-title">Complete Your Profile</h2>
+      <p class="onboarding-copy">Please finish a few details so we can personalize your campus portal. Fields already set by your administrator stay locked.</p>
+      <form id="onboarding-form" class="profile-form" novalidate>
+        <div class="form-grid">
+          <div class="field">
+            <label for="ob-first-name">First name</label>
+            <input type="text" id="ob-first-name" autocomplete="given-name" />
+            <span class="field-error" id="ob-first-name-error"></span>
+          </div>
+          <div class="field">
+            <label for="ob-last-name">Last name</label>
+            <input type="text" id="ob-last-name" autocomplete="family-name" />
+            <span class="field-error" id="ob-last-name-error"></span>
+          </div>
+          <div class="field">
+            <label for="ob-enrollment">Enrollment number</label>
+            <input type="text" id="ob-enrollment" readonly />
+          </div>
+          <div class="field">
+            <label for="ob-course">Course / programme</label>
+            <input type="text" id="ob-course" readonly />
+            <span class="field-hint" id="ob-course-hint"></span>
+          </div>
+          <div class="field">
+            <label for="ob-year">Academic year</label>
+            <input type="text" id="ob-year" placeholder="e.g. 2024-25" />
+            <span class="field-error" id="ob-year-error"></span>
+          </div>
+          <div class="field">
+            <label for="ob-semester">Current semester</label>
+            <input type="number" id="ob-semester" min="1" max="12" placeholder="1–12" />
+            <span class="field-error" id="ob-semester-error"></span>
+          </div>
+          <div class="field field-span-2">
+            <label for="ob-email">Email address</label>
+            <input type="email" id="ob-email" autocomplete="email" placeholder="you@university.edu" />
+            <span class="field-error" id="ob-email-error"></span>
+          </div>
+        </div>
+        <p id="onboarding-status" class="form-status hidden" role="status"></p>
+        <button type="submit" class="btn-primary" id="onboarding-save-btn">Save Profile</button>
+      </form>
+    </div>
+  </section>
+
+  <main id="app-main">
+    <section id="view-chat" class="view chat-layout">
+      <aside id="chat-sidebar" class="chat-sidebar" aria-label="Conversations">
+        <div class="chat-sidebar-top">
+          <button type="button" id="new-chat-btn" class="sidebar-primary-btn">+ New Chat</button>
+          <label class="sidebar-search-label" for="conversation-search">Search conversations</label>
+          <input type="search" id="conversation-search" placeholder="Search…" autocomplete="off" />
+        </div>
+        <div class="chat-sidebar-section-label">Recent</div>
+        <div id="conversation-list" class="conversation-list" role="list"></div>
+        <div class="chat-sidebar-footer">
+          <button type="button" id="clear-history-btn" class="sidebar-danger-btn">Clear History</button>
+        </div>
+      </aside>
+
+      <div class="chat-main">
+        <button type="button" id="sidebar-toggle-btn" class="sidebar-toggle" aria-label="Toggle conversations">☰</button>
+
+        <div id="chat-empty-state" class="chat-empty-state">
+          <p id="chat-time-greeting" class="chat-time-greeting">Welcome!</p>
+          <p class="chat-empty-subtitle">Your university knowledge assistant.</p>
+          <p class="chat-empty-intro">Ask anything about your university. I'll help you find accurate information from official documents, with sources you can verify.</p>
+
+          <!-- Campus Updates: only shown when admin-approved notices exist (none yet → stays hidden) -->
+          <div id="campus-updates" class="campus-updates hidden" aria-live="polite"></div>
+
+          <h3 class="chat-section-title">What can I help you with today?</h3>
+          <div class="category-cards" id="category-cards">
+            <button type="button" class="category-card" data-query="When are the examination dates and what does the academic calendar say about the next exam period?">
+              <span class="category-icon" aria-hidden="true">📅</span>
+              <span class="category-title">Academic Calendar</span>
+              <span class="category-desc">Exam dates and schedules.</span>
+            </button>
+            <button type="button" class="category-card" data-query="What is the fee structure and what are the payment deadlines?">
+              <span class="category-icon" aria-hidden="true">💳</span>
+              <span class="category-title">Fees &amp; Payments</span>
+              <span class="category-desc">Fee structures and deadlines.</span>
+            </button>
+            <button type="button" class="category-card" data-query="What are the scholarship eligibility criteria and how do I apply?">
+              <span class="category-icon" aria-hidden="true">🎓</span>
+              <span class="category-title">Scholarships</span>
+              <span class="category-desc">Eligibility and applications.</span>
+            </button>
+            <button type="button" class="category-card" data-query="What are the hostel rules and library facilities on campus?">
+              <span class="category-icon" aria-hidden="true">🏛️</span>
+              <span class="category-title">Campus Information</span>
+              <span class="category-desc">Hostel, library and facilities.</span>
+            </button>
+          </div>
+
+          <h3 class="chat-section-title chat-try-title">Try asking</h3>
+          <div class="suggestion-chips" id="suggestion-chips">
+            <button type="button" class="suggestion-chip" data-query="When is the next examination scheduled?">When is the next examination scheduled?</button>
+            <button type="button" class="suggestion-chip" data-query="What is the hostel fee structure?">What is the hostel fee structure?</button>
+            <button type="button" class="suggestion-chip" data-query="What are the scholarship eligibility criteria?">What are the scholarship eligibility criteria?</button>
+            <button type="button" class="suggestion-chip" data-query="Where can I find the academic calendar?">Where can I find the academic calendar?</button>
+          </div>
+        </div>
+
+        <div id="chat-log" class="chat-log hidden" aria-live="polite"></div>
+
+        <form id="chat-form" class="chat-input-row">
+          <input type="text" id="chat-input" placeholder="Ask about fees, exams, hostel, scholarships…" autocomplete="off" required />
+          <button type="submit" id="chat-send-btn">Send</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="view-documents" class="view hidden">
+      <div class="view-header">
+        <h2>Document Catalog</h2>
+        <button id="upload-toggle-btn" class="admin-only hidden">+ Upload document</button>
+      </div>
+
+      <form id="upload-form" class="upload-form hidden admin-only" novalidate>
+        <input type="file" id="upload-file" accept=".pdf,.docx,.md,.markdown,.txt,.jpg,.jpeg,.png,image/jpeg,image/png" required />
+        <input type="text" id="upload-title" placeholder="Document title" required />
+        <input type="text" id="upload-category" placeholder="Category (e.g. Fees, Hostel)" required />
+        <input type="text" id="upload-department" placeholder="Department (optional)" />
+        <input type="text" id="upload-year" placeholder="Academic year (optional)" />
+        <button type="submit" id="ingest-submit-btn">Ingest document</button>
+        <p id="upload-status" class="form-status hidden" role="status"></p>
+      </form>
+
+      <table class="doc-table">
+        <thead>
+          <tr><th>Title</th><th>Category</th><th>Type</th><th>Status</th><th>Chunks</th><th>Uploaded</th><th>File</th></tr>
+        </thead>
+        <tbody id="doc-table-body"></tbody>
+      </table>
+    </section>
+
+    <section id="view-calendar" class="view hidden">
+      <div class="calendar-page">
+        <div class="view-header calendar-page-header">
+          <div>
+            <h2>Student Academic Calendar</h2>
+            <p class="calendar-page-sub">University events, deadlines, examinations, and holidays — the same published calendar for every student.</p>
+          </div>
+          <button type="button" id="calendar-refresh-btn" class="btn-secondary">Refresh</button>
+        </div>
+
+        <div class="calendar-layout">
+          <div class="calendar-main-col">
+            <div class="calendar-toolbar">
+              <button type="button" id="cal-prev-year" class="cal-nav-btn" aria-label="Previous year">«</button>
+              <button type="button" id="cal-prev-month" class="cal-nav-btn" aria-label="Previous month">‹</button>
+              <h3 id="cal-month-label" class="cal-month-label">Month Year</h3>
+              <button type="button" id="cal-next-month" class="cal-nav-btn" aria-label="Next month">›</button>
+              <button type="button" id="cal-next-year" class="cal-nav-btn" aria-label="Next year">»</button>
+              <button type="button" id="cal-today-btn" class="btn-secondary cal-today-btn">Today</button>
+            </div>
+
+            <div class="cal-weekdays" aria-hidden="true">
+              <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+            </div>
+            <div id="cal-grid" class="cal-grid" role="grid" aria-label="Monthly calendar"></div>
+
+            <div id="cal-legend" class="cal-legend" aria-label="Event category colours"></div>
+          </div>
+
+          <aside class="calendar-side-col" aria-label="Selected date events">
+            <h3 id="cal-selected-heading">Selected date</h3>
+            <div id="cal-selected-events" class="cal-selected-events">
+              <p class="muted">Select a date to view events.</p>
+            </div>
+          </aside>
+        </div>
+
+        <div id="cal-tooltip" class="cal-tooltip hidden" role="tooltip"></div>
+
+        <section class="upcoming-section" aria-labelledby="upcoming-heading">
+          <div class="upcoming-header">
+            <h3 id="upcoming-heading">Upcoming Events</h3>
+            <p class="muted">Scroll horizontally to browse future published events.</p>
+          </div>
+          <div id="upcoming-scroller" class="upcoming-scroller" tabindex="0"></div>
+        </section>
+      </div>
+    </section>
+
+    <section id="view-admin" class="view hidden admin-shell">
+      <aside id="admin-sidebar" class="admin-sidebar" aria-label="Admin navigation">
+        <div class="admin-sidebar-brand">Administration</div>
+
+        <div class="admin-nav-group-label">Administration</div>
+        <button type="button" class="admin-nav-btn active" data-admin-panel="overview">Overview</button>
+        <button type="button" class="admin-nav-btn" data-admin-panel="documents">Document Management</button>
+        <button type="button" class="admin-nav-btn" data-admin-panel="calendar">Academic Calendar Management</button>
+
+        <button type="button" class="admin-nav-btn admin-nav-parent" id="admin-nav-eval-toggle" aria-expanded="true">
+          <span>RAG Evaluation</span>
+          <span class="admin-nav-caret" aria-hidden="true">▾</span>
+        </button>
+        <div id="admin-nav-eval-children" class="admin-nav-children">
+          <button type="button" class="admin-nav-btn sub" data-admin-panel="eval-overview">Evaluation Overview</button>
+          <button type="button" class="admin-nav-btn sub" data-admin-panel="eval-retrieval">Retrieval Analysis</button>
+          <button type="button" class="admin-nav-btn sub" data-admin-panel="eval-answer">Answer Quality</button>
+          <button type="button" class="admin-nav-btn sub" data-admin-panel="eval-questions">Question-level Results</button>
+          <button type="button" class="admin-nav-btn sub" data-admin-panel="eval-history">Evaluation History</button>
+          <button type="button" class="admin-nav-btn sub" data-admin-panel="eval-experiments">Experiments &amp; Improvements</button>
+        </div>
+
+        <div class="admin-nav-group-label">Platform Monitoring</div>
+        <button type="button" class="admin-nav-btn" data-admin-panel="query-logs">Query Logs</button>
+        <button type="button" class="admin-nav-btn" data-admin-panel="feedback">User Feedback</button>
+        <button type="button" class="admin-nav-btn" data-admin-panel="insights">Admin Insights</button>
+      </aside>
+
+      <div class="admin-main">
+        <button type="button" id="admin-sidebar-toggle" class="admin-sidebar-toggle" aria-label="Toggle admin navigation">☰</button>
+
+        <!-- Overview -->
+        <div id="admin-panel-overview" class="admin-panel">
+          <div class="admin-panel-header">
+            <h2>Admin Overview</h2>
+            <p class="admin-panel-sub">Operational snapshot and latest evaluation status.</p>
+          </div>
+          <div class="stat-grid" id="overview-stat-grid"></div>
+          <div id="overview-eval-banner" class="eval-banner"></div>
+        </div>
+
+        <div id="admin-panel-calendar" class="admin-panel hidden">
+          <div class="admin-panel-header">
+            <h2>Academic Calendar Management</h2>
+            <p class="admin-panel-sub">Create and publish events visible to every student account from a single shared calendar.</p>
+          </div>
+          <div class="admin-cal-layout">
+            <form id="admin-cal-form" class="admin-cal-form" novalidate>
+              <input type="hidden" id="acf-id" value="" />
+              <h3 id="admin-cal-form-title">Add event</h3>
+              <div class="form-grid">
+                <div class="field field-span-2">
+                  <label for="acf-title">Event title</label>
+                  <input type="text" id="acf-title" required maxlength="200" />
+                </div>
+                <div class="field field-span-2">
+                  <label for="acf-description">Description</label>
+                  <textarea id="acf-description" rows="3"></textarea>
+                </div>
+                <div class="field">
+                  <label for="acf-category">Category</label>
+                  <select id="acf-category" required></select>
+                </div>
+                <div class="field">
+                  <label for="acf-status">Publication status</label>
+                  <select id="acf-status">
+                    <option value="draft">Draft</option>
+                    <option value="published" selected>Published</option>
+                    <option value="archived">Archived</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="acf-start-date">Start date</label>
+                  <input type="date" id="acf-start-date" required />
+                </div>
+                <div class="field">
+                  <label for="acf-end-date">End date (optional)</label>
+                  <input type="date" id="acf-end-date" />
+                </div>
+                <div class="field">
+                  <label for="acf-start-time">Start time (optional)</label>
+                  <input type="time" id="acf-start-time" />
+                </div>
+                <div class="field">
+                  <label for="acf-end-time">End time (optional)</label>
+                  <input type="time" id="acf-end-time" />
+                </div>
+                <div class="field field-span-2">
+                  <label for="acf-location">Venue / location</label>
+                  <input type="text" id="acf-location" />
+                </div>
+                <div class="field">
+                  <label for="acf-official">Designation</label>
+                  <select id="acf-official">
+                    <option value="1" selected>Official</option>
+                    <option value="0">Non-official</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="acf-source-doc">Source document ID (optional)</label>
+                  <input type="number" id="acf-source-doc" min="1" placeholder="e.g. 12" />
+                </div>
+              </div>
+              <p id="admin-cal-form-status" class="form-status hidden" role="status"></p>
+              <div class="admin-cal-form-actions">
+                <button type="submit" class="btn-primary" id="acf-save-btn">Save event</button>
+                <button type="button" class="btn-secondary" id="acf-reset-btn">Clear form</button>
+              </div>
+            </form>
+            <div class="admin-cal-list-wrap">
+              <div class="admin-cal-list-toolbar">
+                <h3>All events</h3>
+                <button type="button" id="admin-cal-reload-btn" class="btn-secondary">Reload</button>
+              </div>
+              <div class="table-scroll">
+                <table class="log-table admin-cal-table">
+                  <thead>
+                    <tr>
+                      <th>Title</th><th>Category</th><th>Start</th><th>Status</th><th>Type</th><th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-cal-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Existing Admin Insights -->
+        <div id="admin-panel-insights" class="admin-panel hidden">
+          <div class="admin-panel-header">
+            <h2>Admin Insights</h2>
+            <p class="admin-panel-sub">Live query analytics from student usage.</p>
+          </div>
+          <div class="stat-grid" id="stat-grid"></div>
+          <h3>Frequently Asked Questions <span class="muted">(repeated queries, exact/near-duplicate match)</span></h3>
+          <table class="log-table"><thead><tr><th>Question</th><th>Times asked</th><th>Last asked</th></tr></thead>
+            <tbody id="faq-table-body"></tbody></table>
+          <h3>Informational Gaps <span class="muted">(queries the corpus doesn't confidently cover)</span></h3>
+          <table class="log-table"><thead><tr><th>Query</th><th>Top similarity</th><th>When</th></tr></thead>
+            <tbody id="gaps-table-body"></tbody></table>
+        </div>
+
+        <div id="admin-panel-query-logs" class="admin-panel hidden">
+          <div class="admin-panel-header">
+            <h2>Query Logs</h2>
+            <p class="admin-panel-sub">Recent campus queries from the live system.</p>
+          </div>
+          <table class="log-table"><thead><tr><th>Query</th><th>Top similarity</th><th>Latency (ms)</th><th>When</th></tr></thead>
+            <tbody id="recent-table-body"></tbody></table>
+        </div>
+
+        <div id="admin-panel-feedback" class="admin-panel hidden">
+          <div class="admin-panel-header">
+            <h2>User Feedback</h2>
+            <p class="admin-panel-sub">Helpful / not-helpful ratings from chat responses.</p>
+          </div>
+          <div class="stat-grid" id="feedback-stat-grid"></div>
+        </div>
+
+        <!-- Evaluation Overview -->
+        <div id="admin-panel-eval-overview" class="admin-panel hidden">
+          <div class="admin-panel-header">
+            <h2>Evaluation Overview</h2>
+            <p class="admin-panel-sub">Latest Evaluation Framework v2 run from persistent storage.</p>
+          </div>
+          <div id="eval-overview-content"></div>
+        </div>
+
+        <div id="admin-panel-eval-retrieval" class="admin-panel hidden">
+          <div class="admin-panel-header">
+            <h2>Retrieval Analysis</h2>
+            <p class="admin-panel-sub">Document- and chunk-level retrieval metrics from the selected run.</p>
+          </div>
+          <div id="eval-retrieval-content"></div>
+        </div>
+
+        <div id="admin-panel-eval-answer" class="admin-panel hidden">
+          <div class="admin-panel-header">
+            <h2>Answer Quality</h2>
+            <p class="admin-panel-sub">Abstention, citation, and answerability metrics. LLM-judge scores remain unavailable until enabled.</p>
+          </div>
+          <div id="eval-answer-content"></div>
+        </div>
+
+        <div id="admin-panel-eval-questions" class="admin-panel hidden">
+          <div class="admin-panel-header">
+            <h2>Question-level Results</h2>
+            <p class="admin-panel-sub">Inspect individual benchmark questions for the selected run.</p>
+          </div>
+          <div id="eval-questions-toolbar" class="eval-toolbar"></div>
+          <div class="table-scroll">
+            <table class="log-table eval-q-table">
+              <thead>
+                <tr>
+                  <th>ID</th><th>Question</th><th>Category</th><th>Difficulty</th>
+                  <th>Answerability</th><th>Status</th><th>Expected doc</th>
+                  <th>Retrieved</th><th>Rank</th><th>Decision</th><th>Citations</th><th>Latency</th>
+                </tr>
+              </thead>
+              <tbody id="eval-questions-body"></tbody>
+            </table>
+          </div>
+          <div id="eval-questions-pager" class="eval-pager"></div>
+          <div id="eval-question-detail" class="eval-detail-card hidden"></div>
+        </div>
+
+        <div id="admin-panel-eval-history" class="admin-panel hidden">
+          <div class="admin-panel-header">
+            <h2>Evaluation History</h2>
+            <p class="admin-panel-sub">Persistent evaluation runs. Records are never overwritten.</p>
+          </div>
+          <div id="eval-history-toolbar" class="eval-toolbar"></div>
+          <div class="table-scroll">
+            <table class="log-table">
+              <thead>
+                <tr>
+                  <th></th><th>Run ID</th><th>When</th><th>Benchmark</th><th>Corpus</th>
+                  <th>Embedding</th><th>Generation</th><th>Mode</th><th>Questions</th>
+                  <th>Status</th><th>Recall@5</th><th>MRR</th>
+                </tr>
+              </thead>
+              <tbody id="eval-history-body"></tbody>
+            </table>
+          </div>
+          <div id="eval-history-pager" class="eval-pager"></div>
+          <div id="eval-compare-panel" class="eval-detail-card hidden"></div>
+        </div>
+
+        <div id="admin-panel-eval-experiments" class="admin-panel hidden">
+          <div class="admin-panel-header">
+            <h2>Experiments &amp; Improvements</h2>
+            <p class="admin-panel-sub">Configuration groups derived from completed evaluation run metadata. No fabricated experiments.</p>
+          </div>
+          <div id="eval-experiments-content"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="profile-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2 id="profile-modal-title">Your Profile</h2>
+      <button type="button" id="profile-modal-close" class="modal-close" aria-label="Close profile">×</button>
+    </div>
+    <div class="profile-readonly-grid">
+      <div><span class="label">First name</span><span id="pf-first-name">—</span></div>
+      <div><span class="label">Last name</span><span id="pf-last-name">—</span></div>
+      <div><span class="label">Enrollment</span><span id="pf-enrollment">—</span></div>
+      <div><span class="label">Course</span><span id="pf-course">—</span></div>
+      <div><span class="label">Academic year</span><span id="pf-year">—</span></div>
+      <div><span class="label">Semester</span><span id="pf-semester">—</span></div>
+      <div class="field-span-2">
+        <span class="label">Email</span>
+        <span id="pf-email">—</span>
+        <span id="pf-email-status" class="email-badge"></span>
+      </div>
+    </div>
+
+    <form id="profile-edit-form" class="profile-form">
+      <h3>Update contact email</h3>
+      <p class="field-hint">Changing your email marks it as unverified until confirmed. Unverified addresses cannot be used for password recovery.</p>
+      <div class="field">
+        <label for="pf-email-input">Email address</label>
+        <input type="email" id="pf-email-input" autocomplete="email" />
+        <span class="field-error" id="pf-email-input-error"></span>
+      </div>
+      <p id="profile-edit-status" class="form-status hidden" role="status"></p>
+      <button type="submit" class="btn-primary" id="profile-save-btn">Save Changes</button>
+    </form>
+  </div>
+</div>
+
+<div id="change-password-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="change-password-title">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2 id="change-password-title">Change Password</h2>
+      <button type="button" id="change-password-close" class="modal-close" aria-label="Close change password">×</button>
+    </div>
+    <p class="field-hint">Use a password of at least 8 characters, including a letter and a number. Do not reuse your current password.</p>
+    <form id="change-password-form" class="profile-form" method="post" action="#" novalidate>
+      <div class="field">
+        <label for="cp-current">Current Password</label>
+        <div class="password-field">
+          <input type="password" id="cp-current" autocomplete="current-password" required />
+          <button type="button" class="password-toggle" data-target="cp-current" aria-label="Show password">
+            <svg class="icon-eye" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <span class="field-error" id="cp-current-error"></span>
+      </div>
+      <div class="field">
+        <label for="cp-new">New Password</label>
+        <div class="password-field">
+          <input type="password" id="cp-new" autocomplete="new-password" required minlength="8" />
+          <button type="button" class="password-toggle" data-target="cp-new" aria-label="Show password">
+            <svg class="icon-eye" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <span class="field-error" id="cp-new-error"></span>
+      </div>
+      <div class="field">
+        <label for="cp-confirm">Confirm New Password</label>
+        <div class="password-field">
+          <input type="password" id="cp-confirm" autocomplete="new-password" required minlength="8" />
+          <button type="button" class="password-toggle" data-target="cp-confirm" aria-label="Show password">
+            <svg class="icon-eye" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <span class="field-error" id="cp-confirm-error"></span>
+      </div>
+      <p id="change-password-status" class="form-status hidden" role="status"></p>
+      <button type="submit" class="btn-primary" id="change-password-submit">Update password</button>
+    </form>
+  </div>
+</div>
+
+<div id="delete-chat-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="delete-chat-title">
+  <div class="modal-card delete-chat-card">
+    <div class="modal-header">
+      <h2 id="delete-chat-title">Delete this conversation?</h2>
+      <button type="button" id="delete-chat-close" class="modal-close" aria-label="Cancel delete">×</button>
+    </div>
+    <p class="delete-chat-copy">This conversation and its messages will be permanently deleted. This action cannot be undone.</p>
+    <div class="delete-chat-actions">
+      <button type="button" id="delete-chat-cancel" class="btn-secondary">Cancel</button>
+      <button type="button" id="delete-chat-confirm" class="btn-danger">Delete Chat</button>
+    </div>
+  </div>
+</div>
+
+<div id="delete-doc-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="delete-doc-title">
+  <div class="modal-card delete-chat-card">
+    <div class="modal-header">
+      <h2 id="delete-doc-title">Permanently delete this document?</h2>
+      <button type="button" id="delete-doc-close" class="modal-close" aria-label="Cancel delete">×</button>
+    </div>
+    <p class="delete-chat-copy">This will permanently remove the original file, extracted content and indexed data. Students and administrators will no longer be able to access this document. This action cannot be undone.</p>
+    <div class="delete-chat-actions">
+      <button type="button" id="delete-doc-cancel" class="btn-secondary">Cancel</button>
+      <button type="button" id="delete-doc-confirm" class="btn-danger">Permanently Delete</button>
+    </div>
+  </div>
+</div>
+
+<div id="app-toast" class="app-toast hidden" role="status" aria-live="polite"></div>
+
+<script src="app.js?v=change-password-1"></script>
+<script src="calendar.js?v=prod-polish-1"></script>
+<script src="eval-dashboard.js?v=1"></script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: campus_copilot_backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_PATH: /data/campus_copilot.db
+      DOCUMENTS_DIR: /data/uploaded_documents
+      USE_MOCK_LLM: "false"
+      # Same-origin via Nginx; empty CORS list defaults to "*" for health tools.
+      CORS_ORIGINS: "*"
+    volumes:
+      - ./deploy/data/campus_copilot.db:/data/campus_copilot.db
+      - ./deploy/data/uploaded_documents:/data/uploaded_documents
+    expose:
+      - "8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 45s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: campus_copilot_frontend
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes: {}

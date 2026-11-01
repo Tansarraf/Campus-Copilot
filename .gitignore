@@ -1,0 +1,66 @@
+# Secrets and local environment
+.env
+.env.local
+.env.*
+!.env.example
+!.env.docker.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Node (not used by the app; ignore if present)
+node_modules/
+
+# Databases and SQLite sidecar files
+*.db
+*.sqlite
+*.sqlite3
+*.db-wal
+*.db-shm
+*.db-journal
+*.db.backup_*
+campus_copilot.db
+
+# Persistent Docker data and backups (never publish)
+deploy/data/
+deploy/backups/
+backend/campus_copilot.db
+backend/uploaded_documents/
+**/uploaded_documents/
+
+# Local-only account provisioning (may contain credentials)
+provision_students_local.py
+
+# Nested duplicate of an older project tree
+campus_copilot_project/
+
+# Logs and temp artifacts
+*.log
+uvicorn_*.log
+frontend/http_*.log
+backend/evaluation/_last_*.log
+backend/evaluation/results/
+backend/scripts/evaluation_results.json
+
+# Uploaded or private documents (keep only synthetic seed_data)
+*.pdf
+!paper/*.pdf
+!backend/seed_data/*.pdf
+
+# IDE / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Cursor local
+.cursor/

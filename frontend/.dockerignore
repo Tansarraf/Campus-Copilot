@@ -1,0 +1,8 @@
+*.log
+http_*.log
+.dockerignore
+Dockerfile
+README*
+.git
+.DS_Store
+.cursor

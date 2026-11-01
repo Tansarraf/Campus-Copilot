@@ -1,0 +1,770 @@
+{
+  "pack": "synthetic_v1",
+  "version": "2.0.0",
+  "corpus_identity": "synthetic_v1",
+  "description": "Development evaluation pack over seven synthetic seed campus documents. Not a genuine university corpus.",
+  "questions": [
+    {
+      "question_id": "calendar-odd-start-001",
+      "question": "When do odd semester classes begin in 2026?",
+      "category": "Academic Calendar",
+      "expected_answer": "August 3, 2026",
+      "expected_document_keys": [
+        "academic_calendar"
+      ],
+      "expected_chunk_keys": [
+        "academic_calendar:odd_semester_2026"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #1",
+      "legacy_query": "When do odd semester classes begin in 2026?"
+    },
+    {
+      "question_id": "calendar-odd-end-exam-001",
+      "question": "What are the dates for the end-semester examinations in the odd semester?",
+      "category": "Academic Calendar",
+      "expected_answer": "December 7, 2026 to December 19, 2026",
+      "expected_document_keys": [
+        "academic_calendar"
+      ],
+      "expected_chunk_keys": [
+        "academic_calendar:odd_semester_2026"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #2",
+      "legacy_query": "What are the dates for the end-semester examinations in the odd semester?"
+    },
+    {
+      "question_id": "calendar-winter-break-001",
+      "question": "When does winter break start?",
+      "category": "Academic Calendar",
+      "expected_answer": "December 20, 2026",
+      "expected_document_keys": [
+        "academic_calendar"
+      ],
+      "expected_chunk_keys": [
+        "academic_calendar:odd_semester_2026"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #3",
+      "legacy_query": "When does winter break start?"
+    },
+    {
+      "question_id": "calendar-even-start-001",
+      "question": "When do even semester classes begin in 2027?",
+      "category": "Academic Calendar",
+      "expected_answer": "January 5, 2027",
+      "expected_document_keys": [
+        "academic_calendar"
+      ],
+      "expected_chunk_keys": [
+        "academic_calendar:even_semester_2027"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #4",
+      "legacy_query": "When do even semester classes begin in 2027?"
+    },
+    {
+      "question_id": "calendar-holi-001",
+      "question": "When is the Holi break scheduled?",
+      "category": "Academic Calendar",
+      "expected_answer": "March 13, 2027 to March 15, 2027",
+      "expected_document_keys": [
+        "academic_calendar"
+      ],
+      "expected_chunk_keys": [
+        "academic_calendar:even_semester_2027"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #5",
+      "legacy_query": "When is the Holi break scheduled?"
+    },
+    {
+      "question_id": "fees-tuition-btech-001",
+      "question": "What is the tuition fee for a B.Tech program per semester?",
+      "category": "Fees",
+      "expected_answer": "Rs. 1,85,000 per semester",
+      "expected_document_keys": [
+        "fee_payment_circular"
+      ],
+      "expected_chunk_keys": [
+        "fee_payment_circular:tuition_structure"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #6",
+      "legacy_query": "What is the tuition fee for a B.Tech program per semester?"
+    },
+    {
+      "question_id": "fees-deadline-odd-001",
+      "question": "What is the deadline to pay fees for the odd semester?",
+      "category": "Fees",
+      "expected_answer": "August 15, 2026",
+      "expected_document_keys": [
+        "fee_payment_circular"
+      ],
+      "expected_chunk_keys": [
+        "fee_payment_circular:payment_deadlines"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #7",
+      "legacy_query": "What is the deadline to pay fees for the odd semester?"
+    },
+    {
+      "question_id": "fees-late-fee-001",
+      "question": "What is the late fee penalty for missing the fee payment deadline?",
+      "category": "Fees",
+      "expected_answer": "Rs. 500 per day",
+      "expected_document_keys": [
+        "fee_payment_circular"
+      ],
+      "expected_chunk_keys": [
+        "fee_payment_circular:late_fee"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #8; source states Rs. 500 per day up to 15 days",
+      "legacy_query": "What is the late fee penalty for missing the fee payment deadline?"
+    },
+    {
+      "question_id": "fees-refund-before-classes-001",
+      "question": "What percentage of tuition fee is refunded if a student withdraws before classes start?",
+      "category": "Fees",
+      "expected_answer": "90%",
+      "expected_document_keys": [
+        "fee_payment_circular"
+      ],
+      "expected_chunk_keys": [
+        "fee_payment_circular:refund_policy"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #9",
+      "legacy_query": "What percentage of tuition fee is refunded if a student withdraws before classes start?"
+    },
+    {
+      "question_id": "fees-tuition-mba-001",
+      "question": "What is the MBA tuition fee per semester?",
+      "category": "Fees",
+      "expected_answer": "Rs. 2,40,000 per semester",
+      "expected_document_keys": [
+        "fee_payment_circular"
+      ],
+      "expected_chunk_keys": [
+        "fee_payment_circular:tuition_structure"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #10",
+      "legacy_query": "What is the MBA tuition fee per semester?"
+    },
+    {
+      "question_id": "hostel-gate-weekday-001",
+      "question": "What time does the hostel gate close on weekdays?",
+      "category": "Hostel",
+      "expected_answer": "10:30 PM",
+      "expected_document_keys": [
+        "hostel_rules_handbook"
+      ],
+      "expected_chunk_keys": [
+        "hostel_rules_handbook:hostel_timings"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #11",
+      "legacy_query": "What time does the hostel gate close on weekdays?"
+    },
+    {
+      "question_id": "hostel-mess-fee-001",
+      "question": "What is the mess fee per semester in the hostel?",
+      "category": "Hostel",
+      "expected_answer": "Rs. 28,000 per semester",
+      "expected_document_keys": [
+        "hostel_rules_handbook"
+      ],
+      "expected_chunk_keys": [
+        "hostel_rules_handbook:mess_fees_and_services"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #12",
+      "legacy_query": "What is the mess fee per semester in the hostel?"
+    },
+    {
+      "question_id": "hostel-visitors-001",
+      "question": "When are visitors allowed to meet students in the hostel?",
+      "category": "Hostel",
+      "expected_answer": "10:00 AM and 6:00 PM",
+      "expected_document_keys": [
+        "hostel_rules_handbook"
+      ],
+      "expected_chunk_keys": [
+        "hostel_rules_handbook:visitors_policy"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #13; common room only between these hours",
+      "legacy_query": "When are visitors allowed to meet students in the hostel?"
+    },
+    {
+      "question_id": "hostel-warnings-expulsion-001",
+      "question": "How many warnings before a student can be expelled from the hostel?",
+      "category": "Hostel",
+      "expected_answer": "three warnings",
+      "expected_document_keys": [
+        "hostel_rules_handbook"
+      ],
+      "expected_chunk_keys": [
+        "hostel_rules_handbook:disciplinary_rules"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #14",
+      "legacy_query": "How many warnings before a student can be expelled from the hostel?"
+    },
+    {
+      "question_id": "hostel-room-allotment-001",
+      "question": "How is hostel room allotment decided for new students?",
+      "category": "Hostel",
+      "expected_answer": "academic merit",
+      "expected_document_keys": [
+        "hostel_rules_handbook"
+      ],
+      "expected_chunk_keys": [
+        "hostel_rules_handbook:room_allotment"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #15",
+      "legacy_query": "How is hostel room allotment decided for new students?"
+    },
+    {
+      "question_id": "scholarship-merit-cgpa-001",
+      "question": "What CGPA is required to be eligible for the merit scholarship?",
+      "category": "Scholarships",
+      "expected_answer": "9.0",
+      "expected_document_keys": [
+        "scholarship_notice"
+      ],
+      "expected_chunk_keys": [
+        "scholarship_notice:merit_scholarship"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #16",
+      "legacy_query": "What CGPA is required to be eligible for the merit scholarship?"
+    },
+    {
+      "question_id": "scholarship-merit-cover-001",
+      "question": "What percentage of tuition does the merit scholarship cover?",
+      "category": "Scholarships",
+      "expected_answer": "50%",
+      "expected_document_keys": [
+        "scholarship_notice"
+      ],
+      "expected_chunk_keys": [
+        "scholarship_notice:merit_scholarship"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #17",
+      "legacy_query": "What percentage of tuition does the merit scholarship cover?"
+    },
+    {
+      "question_id": "scholarship-need-income-001",
+      "question": "What is the family income limit for need-based financial aid?",
+      "category": "Scholarships",
+      "expected_answer": "Rs. 3,00,000",
+      "expected_document_keys": [
+        "scholarship_notice"
+      ],
+      "expected_chunk_keys": [
+        "scholarship_notice:need_based_financial_aid"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #18",
+      "legacy_query": "What is the family income limit for need-based financial aid?"
+    },
+    {
+      "question_id": "scholarship-deadline-001",
+      "question": "What is the deadline to apply for scholarships this year?",
+      "category": "Scholarships",
+      "expected_answer": "September 30, 2026",
+      "expected_document_keys": [
+        "scholarship_notice"
+      ],
+      "expected_chunk_keys": [
+        "scholarship_notice:general_application_instructions"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #19",
+      "legacy_query": "What is the deadline to apply for scholarships this year?"
+    },
+    {
+      "question_id": "scholarship-sports-amount-001",
+      "question": "How much is the sports scholarship worth per year?",
+      "category": "Scholarships",
+      "expected_answer": "Rs. 50,000 per year",
+      "expected_document_keys": [
+        "scholarship_notice"
+      ],
+      "expected_chunk_keys": [
+        "scholarship_notice:sports_scholarship"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #20",
+      "legacy_query": "How much is the sports scholarship worth per year?"
+    },
+    {
+      "question_id": "placement-cgpa-001",
+      "question": "What CGPA is required to register with the placement cell?",
+      "category": "Placements",
+      "expected_answer": "6.0",
+      "expected_document_keys": [
+        "placement_guidelines"
+      ],
+      "expected_chunk_keys": [
+        "placement_guidelines:eligibility_criteria"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #21",
+      "legacy_query": "What CGPA is required to register with the placement cell?"
+    },
+    {
+      "question_id": "placement-one-offer-001",
+      "question": "What is the one offer policy for campus placements?",
+      "category": "Placements",
+      "expected_answer": "once a student accepts a job offer through campus placements, they are not permitted to sit for further placement drives",
+      "expected_document_keys": [
+        "placement_guidelines"
+      ],
+      "expected_chunk_keys": [
+        "placement_guidelines:one_offer_policy"
+      ],
+      "answerability": "answerable",
+      "difficulty": "medium",
+      "evaluation_notes": "Legacy #22; Dream Company exception exists",
+      "legacy_query": "What is the one offer policy for campus placements?"
+    },
+    {
+      "question_id": "placement-dress-001",
+      "question": "What is the dress code for placement interviews?",
+      "category": "Placements",
+      "expected_answer": "Formal business attire",
+      "expected_document_keys": [
+        "placement_guidelines"
+      ],
+      "expected_chunk_keys": [
+        "placement_guidelines:dress_code"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #23",
+      "legacy_query": "What is the dress code for placement interviews?"
+    },
+    {
+      "question_id": "placement-confidential-001",
+      "question": "What happens if a student shares confidential interview questions?",
+      "category": "Placements",
+      "expected_answer": "barred from placements",
+      "expected_document_keys": [
+        "placement_guidelines"
+      ],
+      "expected_chunk_keys": [
+        "placement_guidelines:code_of_conduct"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #24",
+      "legacy_query": "What happens if a student shares confidential interview questions?"
+    },
+    {
+      "question_id": "exam-attendance-001",
+      "question": "What is the minimum attendance required to be eligible to sit for exams?",
+      "category": "Examinations",
+      "expected_answer": "75%",
+      "expected_document_keys": [
+        "examination_regulations"
+      ],
+      "expected_chunk_keys": [
+        "examination_regulations:attendance"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #25",
+      "legacy_query": "What is the minimum attendance required to be eligible to sit for exams?"
+    },
+    {
+      "question_id": "exam-revaluation-fee-001",
+      "question": "What is the revaluation fee per paper?",
+      "category": "Examinations",
+      "expected_answer": "Rs. 500 per paper",
+      "expected_document_keys": [
+        "examination_regulations"
+      ],
+      "expected_chunk_keys": [
+        "examination_regulations:revaluation"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #26",
+      "legacy_query": "What is the revaluation fee per paper?"
+    },
+    {
+      "question_id": "exam-malpractice-001",
+      "question": "What happens if a student is caught with unauthorized material during an exam?",
+      "category": "Examinations",
+      "expected_answer": "Fail (F) grade",
+      "expected_document_keys": [
+        "examination_regulations"
+      ],
+      "expected_chunk_keys": [
+        "examination_regulations:malpractice"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #27",
+      "legacy_query": "What happens if a student is caught with unauthorized material during an exam?"
+    },
+    {
+      "question_id": "exam-o-grade-001",
+      "question": "How many grade points does an O grade carry?",
+      "category": "Examinations",
+      "expected_answer": "10 grade points",
+      "expected_document_keys": [
+        "examination_regulations"
+      ],
+      "expected_chunk_keys": [
+        "examination_regulations:grading_scale"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #28",
+      "legacy_query": "How many grade points does an O grade carry?"
+    },
+    {
+      "question_id": "library-ug-borrow-001",
+      "question": "How many books can an undergraduate student borrow at a time from the library?",
+      "category": "Library",
+      "expected_answer": "4 books",
+      "expected_document_keys": [
+        "library_circular"
+      ],
+      "expected_chunk_keys": [
+        "library_circular:borrowing_limits"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #29",
+      "legacy_query": "How many books can an undergraduate student borrow at a time from the library?"
+    },
+    {
+      "question_id": "library-fine-001",
+      "question": "What is the library fine per day for an overdue book?",
+      "category": "Library",
+      "expected_answer": "Rs. 2 per day",
+      "expected_document_keys": [
+        "library_circular"
+      ],
+      "expected_chunk_keys": [
+        "library_circular:fines"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #30",
+      "legacy_query": "What is the library fine per day for an overdue book?"
+    },
+    {
+      "question_id": "library-reference-borrow-001",
+      "question": "Can books in the reference section be borrowed from the library?",
+      "category": "Library",
+      "expected_answer": "may not be borrowed",
+      "expected_document_keys": [
+        "library_circular"
+      ],
+      "expected_chunk_keys": [
+        "library_circular:reference_section"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Legacy #31",
+      "legacy_query": "Can books in the reference section be borrowed from the library?"
+    },
+    {
+      "question_id": "fees-tuition-btech-para-001",
+      "question": "How much tuition does a B.Tech student pay each semester?",
+      "category": "Fees",
+      "expected_answer": "Rs. 1,85,000 per semester",
+      "expected_document_keys": [
+        "fee_payment_circular"
+      ],
+      "expected_chunk_keys": [
+        "fee_payment_circular:tuition_structure"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Paraphrase of fees-tuition-btech-001"
+    },
+    {
+      "question_id": "hostel-gate-weekday-para-001",
+      "question": "At what time is the hostel gate closed on weekdays?",
+      "category": "Hostel",
+      "expected_answer": "10:30 PM",
+      "expected_document_keys": [
+        "hostel_rules_handbook"
+      ],
+      "expected_chunk_keys": [
+        "hostel_rules_handbook:hostel_timings"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Paraphrase of hostel-gate-weekday-001"
+    },
+    {
+      "question_id": "exam-attendance-para-001",
+      "question": "What attendance percentage is needed to appear for end-semester exams?",
+      "category": "Examinations",
+      "expected_answer": "75%",
+      "expected_document_keys": [
+        "examination_regulations"
+      ],
+      "expected_chunk_keys": [
+        "examination_regulations:attendance"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Paraphrase of exam-attendance-001"
+    },
+    {
+      "question_id": "scholarship-merit-cgpa-para-001",
+      "question": "Minimum CGPA for the merit scholarship?",
+      "category": "Scholarships",
+      "expected_answer": "9.0",
+      "expected_document_keys": [
+        "scholarship_notice"
+      ],
+      "expected_chunk_keys": [
+        "scholarship_notice:merit_scholarship"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Paraphrase of scholarship-merit-cgpa-001"
+    },
+    {
+      "question_id": "library-fine-para-001",
+      "question": "How much is charged daily for returning a library book late?",
+      "category": "Library",
+      "expected_answer": "Rs. 2 per day",
+      "expected_document_keys": [
+        "library_circular"
+      ],
+      "expected_chunk_keys": [
+        "library_circular:fines"
+      ],
+      "answerability": "answerable",
+      "difficulty": "easy",
+      "evaluation_notes": "Paraphrase of library-fine-001"
+    },
+    {
+      "question_id": "multi-fees-mess-001",
+      "question": "What is the B.Tech tuition fee and the hostel mess fee per semester?",
+      "category": "Multi-Document",
+      "expected_answer": "Rs. 1,85,000 per semester",
+      "expected_document_keys": [
+        "fee_payment_circular",
+        "hostel_rules_handbook"
+      ],
+      "expected_chunk_keys": [
+        "fee_payment_circular:tuition_structure",
+        "hostel_rules_handbook:mess_fees_and_services"
+      ],
+      "answerability": "answerable",
+      "difficulty": "medium",
+      "evaluation_notes": "Multi-doc; expected_answer checks tuition; mess Rs. 28,000 also required in answer for full credit notes"
+    },
+    {
+      "question_id": "multi-cgpa-merit-placement-001",
+      "question": "What CGPA is required for the merit scholarship, and what CGPA is required to register with the placement cell?",
+      "category": "Multi-Document",
+      "expected_answer": "9.0",
+      "expected_document_keys": [
+        "scholarship_notice",
+        "placement_guidelines"
+      ],
+      "expected_chunk_keys": [
+        "scholarship_notice:merit_scholarship",
+        "placement_guidelines:eligibility_criteria"
+      ],
+      "answerability": "answerable",
+      "difficulty": "medium",
+      "evaluation_notes": "Multi-doc; also expects placement CGPA 6.0 in a complete answer"
+    },
+    {
+      "question_id": "multi-calendar-exam-attendance-001",
+      "question": "When do odd-semester end-semester exams run, and what minimum attendance is required to sit for exams?",
+      "category": "Multi-Document",
+      "expected_answer": "December 7, 2026",
+      "expected_document_keys": [
+        "academic_calendar",
+        "examination_regulations"
+      ],
+      "expected_chunk_keys": [
+        "academic_calendar:odd_semester_2026",
+        "examination_regulations:attendance"
+      ],
+      "answerability": "answerable",
+      "difficulty": "hard",
+      "evaluation_notes": "Multi-doc; attendance 75% also expected in a complete answer"
+    },
+    {
+      "question_id": "partial-hostel-mess-refund-001",
+      "question": "What is the refund schedule for hostel and mess fees after withdrawal?",
+      "category": "Fees",
+      "expected_answer": null,
+      "expected_document_keys": [
+        "fee_payment_circular"
+      ],
+      "expected_chunk_keys": [
+        "fee_payment_circular:refund_policy"
+      ],
+      "answerability": "partial",
+      "difficulty": "medium",
+      "evaluation_notes": "Fee circular states hostel/mess refunds follow a separate Hostel Office schedule; full schedule not in corpus"
+    },
+    {
+      "question_id": "partial-convocation-date-001",
+      "question": "What is the exact date of the annual convocation in 2027?",
+      "category": "Academic Calendar",
+      "expected_answer": null,
+      "expected_document_keys": [
+        "academic_calendar"
+      ],
+      "expected_chunk_keys": [
+        "academic_calendar:convocation"
+      ],
+      "answerability": "partial",
+      "difficulty": "medium",
+      "evaluation_notes": "Only tentative first week of August 2027; exact date not published"
+    },
+    {
+      "question_id": "unans-phd-stipend-001",
+      "question": "What is the monthly PhD stipend for research scholars?",
+      "category": "Research",
+      "expected_answer": null,
+      "expected_document_keys": [],
+      "expected_chunk_keys": [],
+      "answerability": "unanswerable",
+      "difficulty": "medium",
+      "evaluation_notes": "Out of synthetic corpus scope; correct behaviour is abstention"
+    },
+    {
+      "question_id": "unans-bus-route-001",
+      "question": "What time does the campus shuttle leave the hostel for the main gate?",
+      "category": "Transport",
+      "expected_answer": null,
+      "expected_document_keys": [],
+      "expected_chunk_keys": [],
+      "answerability": "unanswerable",
+      "difficulty": "medium",
+      "evaluation_notes": "Out of synthetic corpus scope; correct behaviour is abstention"
+    },
+    {
+      "question_id": "unans-wifi-password-001",
+      "question": "What is the default student Wi-Fi password?",
+      "category": "IT Services",
+      "expected_answer": null,
+      "expected_document_keys": [],
+      "expected_chunk_keys": [],
+      "answerability": "unanswerable",
+      "difficulty": "medium",
+      "evaluation_notes": "Out of synthetic corpus scope; correct behaviour is abstention"
+    },
+    {
+      "question_id": "unans-parking-fee-001",
+      "question": "How much is the annual two-wheeler parking fee on campus?",
+      "category": "Facilities",
+      "expected_answer": null,
+      "expected_document_keys": [],
+      "expected_chunk_keys": [],
+      "answerability": "unanswerable",
+      "difficulty": "medium",
+      "evaluation_notes": "Out of synthetic corpus scope; correct behaviour is abstention"
+    },
+    {
+      "question_id": "unans-medical-insurance-001",
+      "question": "What is the student medical insurance premium for 2026-27?",
+      "category": "Health",
+      "expected_answer": null,
+      "expected_document_keys": [],
+      "expected_chunk_keys": [],
+      "answerability": "unanswerable",
+      "difficulty": "medium",
+      "evaluation_notes": "Out of synthetic corpus scope; correct behaviour is abstention"
+    },
+    {
+      "question_id": "unans-canteen-price-001",
+      "question": "What is the price of a standard thali in the main canteen?",
+      "category": "Facilities",
+      "expected_answer": null,
+      "expected_document_keys": [],
+      "expected_chunk_keys": [],
+      "answerability": "unanswerable",
+      "difficulty": "medium",
+      "evaluation_notes": "Out of synthetic corpus scope; correct behaviour is abstention"
+    },
+    {
+      "question_id": "unans-faculty-phone-001",
+      "question": "What is the phone number of the Dean of Academic Affairs?",
+      "category": "Administration",
+      "expected_answer": null,
+      "expected_document_keys": [],
+      "expected_chunk_keys": [],
+      "answerability": "unanswerable",
+      "difficulty": "medium",
+      "evaluation_notes": "Out of synthetic corpus scope; correct behaviour is abstention"
+    },
+    {
+      "question_id": "unans-calendar-2024-001",
+      "question": "When did odd semester classes begin in 2024?",
+      "category": "Academic Calendar",
+      "expected_answer": null,
+      "expected_document_keys": [],
+      "expected_chunk_keys": [],
+      "answerability": "unanswerable",
+      "difficulty": "medium",
+      "evaluation_notes": "Out of synthetic corpus scope; correct behaviour is abstention"
+    },
+    {
+      "question_id": "unans-sports-complex-hours-001",
+      "question": "What are the weekday opening hours of the sports complex?",
+      "category": "Sports",
+      "expected_answer": null,
+      "expected_document_keys": [],
+      "expected_chunk_keys": [],
+      "answerability": "unanswerable",
+      "difficulty": "medium",
+      "evaluation_notes": "Out of synthetic corpus scope; correct behaviour is abstention"
+    },
+    {
+      "question_id": "unans-mba-offcampus-hostel-001",
+      "question": "Are MBA students living off campus required to pay hostel mess fees?",
+      "category": "Hostel",
+      "expected_answer": null,
+      "expected_document_keys": [],
+      "expected_chunk_keys": [],
+      "answerability": "unanswerable",
+      "difficulty": "medium",
+      "evaluation_notes": "Out of synthetic corpus scope; correct behaviour is abstention"
+    }
+  ]
+}
