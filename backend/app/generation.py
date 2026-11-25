@@ -4,6 +4,7 @@ conversation turns and calls Gemini (via LangChain's ChatGoogleGenerativeAI)
 to produce a cited answer. Falls back to a templated extractive answer in
 mock mode only. Real-mode failures never fall back to mock.
 """
+from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
 
 from app import config
@@ -73,6 +74,8 @@ def _get_gemini_chat():
         model=config.GEMINI_GENERATION_MODEL,
         google_api_key=config.GEMINI_API_KEY,
         temperature=0.2,
+        timeout=config.GEMINI_GENERATION_TIMEOUT_SECONDS,
+        max_retries=1,
     )
 
 
@@ -110,12 +113,26 @@ def generate_answer(question: str, chunks: list[dict], history: list[dict] | Non
         f"Answer following all the rules above."
     )
 
+    messages = [
+        ("system", SYSTEM_PROMPT),
+        ("human", user_prompt),
+    ]
+    timeout = max(1, int(config.GEMINI_GENERATION_TIMEOUT_SECONDS))
     try:
         chat = _get_gemini_chat()
-        response = chat.invoke([
-            ("system", SYSTEM_PROMPT),
-            ("human", user_prompt),
-        ])
+        pool = ThreadPoolExecutor(max_workers=1)
+        try:
+            future = pool.submit(chat.invoke, messages)
+            try:
+                response = future.result(timeout=timeout)
+            except TimeoutError as exc:
+                future.cancel()
+                raise GeminiAPIError(
+                    "Gemini request timed out. Retry the operation.",
+                    status_hint="timeout",
+                ) from exc
+        finally:
+            pool.shutdown(wait=False, cancel_futures=True)
     except GeminiAPIError:
         raise
     except Exception as exc:

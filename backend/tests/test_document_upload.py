@@ -14,6 +14,12 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_ROOT))
 
 
+def _doc_items(payload):
+    if isinstance(payload, list):
+        return payload
+    return list((payload or {}).get("items") or [])
+
+
 class DocumentUploadTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -145,7 +151,7 @@ class DocumentUploadTests(unittest.TestCase):
 
         listed = self.client.get("/documents", headers=self._student())
         self.assertEqual(listed.status_code, 200)
-        self.assertTrue(any(d["id"] == body["id"] for d in listed.json()))
+        self.assertTrue(any(d["id"] == body["id"] for d in _doc_items(listed.json())))
 
         file_res = self.client.get(
             f"/documents/{body['id']}/file", headers=self._student()
@@ -251,7 +257,7 @@ class DocumentUploadTests(unittest.TestCase):
             f"/documents/{created['id']}/file", headers=self._student()
         )
         self.assertEqual(denied.status_code, 403)
-        listed = self.client.get("/documents", headers=self._student()).json()
+        listed = _doc_items(self.client.get("/documents", headers=self._student()).json())
         self.assertFalse(any(d["id"] == created["id"] for d in listed))
         admin_ok = self.client.get(
             f"/documents/{created['id']}/file", headers=self._admin()

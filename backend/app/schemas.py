@@ -174,6 +174,19 @@ class DocumentOut(BaseModel):
     has_original_file: bool = False
 
 
+class DocumentListResponse(BaseModel):
+    items: list[DocumentOut]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
+
+class DocumentCategoriesResponse(BaseModel):
+    categories: list[str]
+    has_uncategorized: bool = False
+
+
 class UploadMetadata(BaseModel):
     title: str
     category: str
@@ -273,4 +286,153 @@ class AcademicEventUpdate(BaseModel):
     is_official: bool | None = None
     publication_status: str | None = None
     source_document_id: int | None = None
+
+
+class NotificationOut(BaseModel):
+    id: int
+    title: str
+    message: str
+    notification_type: str
+    related_document_id: int | None = None
+    related_event_id: int | None = None
+    created_at: str
+    read_at: str | None = None
+    is_read: bool = False
+
+
+class NotificationListResponse(BaseModel):
+    items: list[NotificationOut]
+    total: int
+    unread_count: int
+    limit: int
+    offset: int
+
+
+class NotificationUnreadCountResponse(BaseModel):
+    unread_count: int
+
+
+class MarkReadResponse(BaseModel):
+    status: str
+    id: int | None = None
+    marked: int | None = None
+
+
+class StudentCreateRequest(BaseModel):
+    full_name: str
+    enrollment_number: str
+    email: str
+    course: str
+    academic_year: str
+    current_semester: int = Field(ge=1, le=12)
+
+    @field_validator("enrollment_number")
+    @classmethod
+    def enrollment_digits(cls, value: str) -> str:
+        return normalize_enrollment_number(value)
+
+    @field_validator("email")
+    @classmethod
+    def email_shape(cls, value: str) -> str:
+        value = (value or "").strip().lower()
+        if not _EMAIL_RE.match(value):
+            raise ValueError("A valid email address is required")
+        return value
+
+    @field_validator("full_name", "course", "academic_year")
+    @classmethod
+    def required_text(cls, value: str) -> str:
+        value = (value or "").strip()
+        if not value:
+            raise ValueError("This field is required")
+        return value
+
+
+class StudentUpdateRequest(BaseModel):
+    full_name: str | None = None
+    email: str | None = None
+    course: str | None = None
+    academic_year: str | None = None
+    current_semester: int | None = Field(default=None, ge=1, le=12)
+
+    @field_validator("email")
+    @classmethod
+    def email_shape(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        value = value.strip().lower()
+        if not _EMAIL_RE.match(value):
+            raise ValueError("A valid email address is required")
+        return value
+
+    @field_validator("full_name", "course", "academic_year")
+    @classmethod
+    def optional_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        value = value.strip()
+        if not value:
+            raise ValueError("This field cannot be empty")
+        return value
+
+
+class StudentStatusRequest(BaseModel):
+    account_status: str
+
+    @field_validator("account_status")
+    @classmethod
+    def allowed_status(cls, value: str) -> str:
+        value = (value or "").strip().lower()
+        if value not in ("active", "disabled"):
+            raise ValueError("Status must be active or disabled")
+        return value
+
+
+class StudentOut(BaseModel):
+    id: int
+    full_name: str
+    first_name: str | None = None
+    last_name: str | None = None
+    email: str | None = None
+    enrollment_number: str
+    course: str
+    department: str | None = None
+    academic_year: str
+    current_semester: int
+    account_status: str
+    created_at: str
+
+
+class StudentListResponse(BaseModel):
+    items: list[StudentOut]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+    active_count: int
+    student_count: int
+
+
+class StudentFilterOptions(BaseModel):
+    courses: list[str]
+    academic_years: list[str]
+    statuses: list[str]
+
+
+class SetupCredential(BaseModel):
+    token: str
+    expires_at: str
+    purpose: str
+    delivery: str
+
+
+class StudentCreateResponse(BaseModel):
+    student: StudentOut
+    setup: SetupCredential
+
+
+class PasswordSetupRequest(BaseModel):
+    token: str
+    new_password: str
+    confirm_password: str
 

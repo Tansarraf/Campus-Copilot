@@ -28,12 +28,16 @@ from app.embedding_validation import EmbeddingCompatibilityError
 from app.gemini_errors import GeminiAPIError
 from app.ingestion.chunker import chunk_units
 from app.ingestion.loaders import load_document
+from app.notification_service import notify_document_published, notify_document_superseded
 from app.retrieval import index_document_chunks
-from app.schemas import DocumentOut
+from app.schemas import DocumentCategoriesResponse, DocumentListResponse, DocumentOut
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
 ALLOWED_EXT = {".pdf", ".docx", ".md", ".markdown", ".txt", ".jpg", ".jpeg", ".png"}
+DEFAULT_PAGE_SIZE = 10
+MAX_PAGE_SIZE = 100
+UNCATEGORIZED_CATEGORY = "__uncategorized__"
 
 
 def _row_to_document_out(row) -> DocumentOut:
@@ -76,16 +80,90 @@ def _student_may_access_document(row) -> bool:
     return status == "active" and (processing in (None, "ready"))
 
 
-@router.get("", response_model=list[DocumentOut])
-def list_documents(user: dict = Depends(get_current_user)):
+def _visibility_sql(user: dict) -> tuple[str, list]:
+    if user.get("role") == "admin":
+        return "", []
+    return (
+        " AND COALESCE(d.document_status, 'active') = 'active'"
+        " AND (d.processing_status IS NULL OR d.processing_status = 'ready')",
+        [],
+    )
+
+
+def _category_sql(category: str | None) -> tuple[str, list]:
+    if category is None:
+        return "", []
+    value = category.strip()
+    if not value or value.lower() in ("all", "all categories"):
+        return "", []
+    if value == UNCATEGORIZED_CATEGORY:
+        return " AND (d.category IS NULL OR TRIM(d.category) = '')", []
+    return " AND d.category = ?", [value]
+
+
+@router.get("/categories", response_model=DocumentCategoriesResponse)
+def list_document_categories(user: dict = Depends(get_current_user)):
+    vis_sql, vis_params = _visibility_sql(user)
     with get_conn() as conn:
         rows = conn.execute(
-            """SELECT d.*, (SELECT COUNT(*) FROM chunks c WHERE c.document_id = d.id) AS chunk_count
-               FROM documents d ORDER BY d.uploaded_at DESC"""
+            f"""SELECT DISTINCT TRIM(d.category) AS category
+                FROM documents d
+                WHERE 1=1 {vis_sql}
+                ORDER BY category COLLATE NOCASE""",
+            vis_params,
         ).fetchall()
-    if user.get("role") != "admin":
-        rows = [r for r in rows if _student_may_access_document(r)]
-    return [_row_to_document_out(r) for r in rows]
+    named = []
+    seen = set()
+    has_uncategorized = False
+    for row in rows:
+        raw = row["category"]
+        if raw is None or not str(raw).strip():
+            has_uncategorized = True
+            continue
+        label = str(raw).strip()
+        key = label.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        named.append(label)
+    named.sort(key=str.lower)
+    return DocumentCategoriesResponse(categories=named, has_uncategorized=has_uncategorized)
+
+
+@router.get("", response_model=DocumentListResponse)
+def list_documents(
+    user: dict = Depends(get_current_user),
+    category: str | None = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE),
+):
+    vis_sql, vis_params = _visibility_sql(user)
+    cat_sql, cat_params = _category_sql(category)
+    where = f"WHERE 1=1 {vis_sql} {cat_sql}"
+    params = [*vis_params, *cat_params]
+    with get_conn() as conn:
+        total = conn.execute(
+            f"SELECT COUNT(*) AS n FROM documents d {where}",
+            params,
+        ).fetchone()["n"]
+        total_pages = max(1, (total + page_size - 1) // page_size) if total else 1
+        page = min(page, total_pages) if total else 1
+        offset = (page - 1) * page_size
+        rows = conn.execute(
+            f"""SELECT d.*, (SELECT COUNT(*) FROM chunks c WHERE c.document_id = d.id) AS chunk_count
+                FROM documents d
+                {where}
+                ORDER BY d.uploaded_at DESC, d.id DESC
+                LIMIT ? OFFSET ?""",
+            [*params, page_size, offset],
+        ).fetchall()
+    return DocumentListResponse(
+        items=[_row_to_document_out(r) for r in rows],
+        total=total,
+        page=page,
+        page_size=page_size,
+        total_pages=total_pages,
+    )
 
 
 @router.post("/upload", response_model=DocumentOut, status_code=status.HTTP_201_CREATED)
@@ -241,6 +319,11 @@ def upload_document(
                FROM documents d WHERE d.id = ?""",
             (document_id,),
         ).fetchone()
+    # Notify only after successful ready ingest (not failed/extraction-empty paths).
+    try:
+        notify_document_published(dict(row))
+    except Exception:  # noqa: BLE001 — never fail upload because of notifications
+        pass
     return _row_to_document_out(row)
 
 
@@ -292,6 +375,13 @@ def supersede_document(
     body: SupersessionRequest,
     admin: dict = Depends(require_admin),
 ):
+    older_row = None
+    if body.supersedes_document_id is not None:
+        with get_conn() as conn:
+            older_row = conn.execute(
+                "SELECT * FROM documents WHERE id = ?",
+                (int(body.supersedes_document_id),),
+            ).fetchone()
     try:
         set_supersession(document_id, body.supersedes_document_id)
     except ValueError as exc:
@@ -304,6 +394,11 @@ def supersede_document(
         ).fetchone()
     if not row:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Document not found")
+    if body.supersedes_document_id is not None and older_row is not None:
+        try:
+            notify_document_superseded(dict(row), dict(older_row))
+        except Exception:  # noqa: BLE001
+            pass
     return _row_to_document_out(row)
 
 

@@ -77,6 +77,9 @@ if _file_mock is not None:
 # text-embedding-004 / gemini-2.0-flash may be unavailable on newer API keys.
 GEMINI_EMBEDDING_MODEL = os.getenv("GEMINI_EMBEDDING_MODEL", "models/gemini-embedding-001")
 GEMINI_GENERATION_MODEL = os.getenv("GEMINI_GENERATION_MODEL", "gemini-3.8-flash")
+# Keep well below the frontend Nginx proxy_read_timeout so quota/hangs
+# become a 503 instead of a silent 504.
+GEMINI_GENERATION_TIMEOUT_SECONDS = int(os.getenv("GEMINI_GENERATION_TIMEOUT_SECONDS", "45"))
 
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-change-me")
 JWT_ALGORITHM = "HS256"
@@ -97,4 +100,17 @@ TOP_K = int(os.getenv("TOP_K", "4"))
 # Chunks whose best similarity score falls below this are treated as
 # "not confidently covered" -> the assistant says so instead of guessing,
 # and the admin dashboard surfaces them as informational gaps.
+# Always applied to vector (cosine) scores — never to raw RRF fusion ranks.
 CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.45"))
+
+# Retrieval fusion: hybrid (default) | vector | keyword
+_RETRIEVAL_MODE_RAW = (os.getenv("RETRIEVAL_MODE") or "hybrid").strip().lower()
+RETRIEVAL_MODE = (
+    _RETRIEVAL_MODE_RAW
+    if _RETRIEVAL_MODE_RAW in ("hybrid", "vector", "keyword")
+    else "hybrid"
+)
+# Reciprocal Rank Fusion constant (standard default 60).
+RRF_K = int(os.getenv("RRF_K", "60"))
+# Per-channel candidate pool before RRF merge.
+HYBRID_CANDIDATE_POOL = int(os.getenv("HYBRID_CANDIDATE_POOL", "20"))

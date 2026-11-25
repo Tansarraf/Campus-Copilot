@@ -14,6 +14,12 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_ROOT))
 
 
+def _doc_items(payload):
+    if isinstance(payload, list):
+        return payload
+    return list((payload or {}).get("items") or [])
+
+
 class DocumentDeletionTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -204,9 +210,9 @@ class DocumentDeletionTests(unittest.TestCase):
             )
         self.assertFalse(stored.exists())
 
-        listed_admin = self.client.get("/documents", headers=self._admin()).json()
+        listed_admin = _doc_items(self.client.get("/documents", headers=self._admin()).json())
         self.assertFalse(any(d["id"] == doc_id for d in listed_admin))
-        listed_student = self.client.get("/documents", headers=self._student()).json()
+        listed_student = _doc_items(self.client.get("/documents", headers=self._student()).json())
         self.assertFalse(any(d["id"] == doc_id for d in listed_student))
 
         file_gone = self.client.get(
@@ -234,7 +240,7 @@ class DocumentDeletionTests(unittest.TestCase):
         self.assertIn(denied.status_code, (401, 403))
         unauth = self.client.delete(f"/documents/{created['id']}")
         self.assertEqual(unauth.status_code, 401)
-        still = self.client.get("/documents", headers=self._admin()).json()
+        still = _doc_items(self.client.get("/documents?page_size=100", headers=self._admin()).json())
         self.assertTrue(any(d["id"] == created["id"] for d in still))
 
     def test_missing_document_returns_404(self):
@@ -321,7 +327,7 @@ class DocumentDeletionTests(unittest.TestCase):
                     f"/documents/{doc_id}", headers=self._admin()
                 )
         self.assertEqual(res.status_code, 500, res.text)
-        listed = self.client.get("/documents", headers=self._admin()).json()
+        listed = _doc_items(self.client.get("/documents?page_size=100", headers=self._admin()).json())
         self.assertTrue(any(d["id"] == doc_id for d in listed))
 
 

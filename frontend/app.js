@@ -19,6 +19,11 @@ let state = {
   ingestBusy: false,
   docDeleteBusy: false,
   pendingDocDeleteId: null,
+  docsPage: 1,
+  docsPageSize: 10,
+  docsCategory: "",
+  docsTotal: 0,
+  docsTotalPages: 1,
 };
 
 let _toastTimer = null;
@@ -134,6 +139,7 @@ function applyRoleVisibility() {
 const AUTH_PANELS = {
   login: "login-panel",
   admin: "admin-panel",
+  setup: "setup-panel",
 };
 
 function showAuthPanel(name) {
@@ -174,6 +180,7 @@ function clearSession() {
     history: [], conversationId: null, conversations: [], chatBusy: false,
     deleteBusy: false, pendingDeleteId: null, ingestBusy: false,
     docDeleteBusy: false, pendingDocDeleteId: null,
+    docsPage: 1, docsPageSize: 10, docsCategory: "", docsTotal: 0, docsTotalPages: 1,
   };
 }
 
@@ -330,6 +337,9 @@ async function enterApp() {
       }
       loadDocuments();
     }
+    if (typeof window.startNotificationPolling === "function") {
+      window.startNotificationPolling();
+    }
   } catch (err) {
     console.error("enterApp failed", err);
     clearSession();
@@ -340,6 +350,9 @@ async function enterApp() {
 }
 
 function logout() {
+  if (typeof window.stopNotificationPolling === "function") {
+    window.stopNotificationPolling();
+  }
   clearSession();
   el("user-menu-dropdown").classList.add("hidden");
   el("profile-modal").classList.add("hidden");
@@ -354,6 +367,8 @@ el("logout-btn").addEventListener("click", logout);
 // ---------- user menu ----------
 el("user-menu-btn").addEventListener("click", (e) => {
   e.stopPropagation();
+  el("notif-panel")?.classList.add("hidden");
+  el("notif-bell-btn")?.setAttribute("aria-expanded", "false");
   const menu = el("user-menu-dropdown");
   const open = menu.classList.toggle("hidden") === false;
   el("user-menu-btn").setAttribute("aria-expanded", open ? "true" : "false");
@@ -1301,19 +1316,131 @@ async function confirmDeleteDocument() {
   }
 }
 
-async function loadDocuments() {
+const UNCATEGORIZED_CATEGORY = "__uncategorized__";
+
+function setDocListError(message) {
+  const node = el("doc-list-error");
+  if (!node) return;
+  if (!message) {
+    node.classList.add("hidden");
+    node.textContent = "";
+    return;
+  }
+  node.textContent = message;
+  node.classList.remove("hidden");
+}
+
+function documentsQueryPath() {
+  const params = new URLSearchParams();
+  params.set("page", String(state.docsPage || 1));
+  params.set("page_size", String(state.docsPageSize || 10));
+  if (state.docsCategory) params.set("category", state.docsCategory);
+  return `/documents?${params.toString()}`;
+}
+
+async function refreshDocumentCategories() {
+  const select = el("doc-category-filter");
+  if (!select) return;
+  const previous = state.docsCategory || "";
   try {
-    const docs = await api("/documents");
-    const tbody = el("doc-table-body");
-    tbody.innerHTML = "";
+    const data = await api("/documents/categories");
+    const categories = data.categories || [];
+    select.innerHTML = `<option value="">All Categories</option>`;
+    categories.forEach((name) => {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      select.appendChild(opt);
+    });
+    if (data.has_uncategorized) {
+      const opt = document.createElement("option");
+      opt.value = UNCATEGORIZED_CATEGORY;
+      opt.textContent = "Uncategorized";
+      select.appendChild(opt);
+    }
+    const stillValid =
+      previous === "" ||
+      (previous === UNCATEGORIZED_CATEGORY && data.has_uncategorized) ||
+      categories.includes(previous);
+    if (!stillValid) {
+      state.docsCategory = "";
+      state.docsPage = 1;
+    }
+    select.value = state.docsCategory || "";
+  } catch (err) {
+    console.error("Failed to load document categories", err);
+  }
+}
+
+function renderDocumentPager() {
+  const pager = el("doc-pager");
+  const meta = el("doc-list-meta");
+  const total = state.docsTotal || 0;
+  const page = state.docsPage || 1;
+  const pages = state.docsTotalPages || 1;
+  if (meta) {
+    meta.textContent = total
+      ? `${total} document${total === 1 ? "" : "s"} · page ${page} of ${pages}`
+      : "0 documents";
+  }
+  if (!pager) return;
+  if (!total) {
+    pager.innerHTML = "";
+    return;
+  }
+  pager.innerHTML =
+    `<button type="button" id="doc-page-prev"${page <= 1 ? " disabled" : ""}>Previous</button>` +
+    `<span>Page ${page} of ${pages}</span>` +
+    `<button type="button" id="doc-page-next"${page >= pages ? " disabled" : ""}>Next</button>`;
+  el("doc-page-prev")?.addEventListener("click", () => {
+    if (state.docsPage <= 1) return;
+    state.docsPage -= 1;
+    loadDocuments();
+  });
+  el("doc-page-next")?.addEventListener("click", () => {
+    if (state.docsPage >= (state.docsTotalPages || 1)) return;
+    state.docsPage += 1;
+    loadDocuments();
+  });
+}
+
+async function loadDocuments({ resetPage = false } = {}) {
+  const tbody = el("doc-table-body");
+  if (resetPage) state.docsPage = 1;
+  setDocListError("");
+  if (tbody) {
+    tbody.innerHTML = `<tr><td colspan="7" class="muted">Loading documents…</td></tr>`;
+  }
+  try {
+    await refreshDocumentCategories();
+    const data = await api(documentsQueryPath());
+    const docs = Array.isArray(data)
+      ? data
+      : (data && (data.items || data.documents)) || [];
+    state.docsTotal = Array.isArray(data) ? docs.length : (data.total ?? docs.length);
+    state.docsPage = Array.isArray(data) ? 1 : (data.page || 1);
+    state.docsPageSize = Array.isArray(data) ? (state.docsPageSize || 10) : (data.page_size || 10);
+    state.docsTotalPages = Array.isArray(data) ? 1 : Math.max(1, data.total_pages || 1);
+
+    if (!docs.length && state.docsPage > 1 && state.docsTotal > 0) {
+      state.docsPage = Math.max(1, state.docsTotalPages || 1);
+      return loadDocuments();
+    }
+
+    if (tbody) tbody.innerHTML = "";
     if (!docs.length) {
-      tbody.innerHTML = `<tr><td colspan="7" class="muted">No documents indexed yet.</td></tr>`;
+      const empty = state.docsCategory
+        ? "No documents match this category."
+        : "No documents indexed yet.";
+      if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="muted">${empty}</td></tr>`;
+      renderDocumentPager();
       return;
     }
     const isAdmin = state.role === "admin";
     docs.forEach((d) => {
       const tr = document.createElement("tr");
       tr.dataset.documentId = String(d.id);
+      tr.dataset.docId = String(d.id);
       const status = d.processing_status || d.document_status || "—";
       const titleCell = d.has_original_file
         ? `<button type="button" class="doc-title-link" data-doc-id="${d.id}">${escapeHtml(d.title)}</button>`
@@ -1332,9 +1459,10 @@ async function loadDocuments() {
       const actions = fileBits.length
         ? `<div class="doc-file-actions">${fileBits.join("")}</div>`
         : `<span class="muted">—</span>`;
+      const categoryLabel = (d.category && String(d.category).trim()) || "Uncategorized";
       tr.innerHTML =
         `<td>${titleCell}<div class="doc-filename muted">${escapeHtml(d.filename || "")}</div></td>` +
-        `<td>${escapeHtml(d.category || "")}${d.academic_year ? `<div class="muted">${escapeHtml(d.academic_year)}</div>` : ""}</td>` +
+        `<td>${escapeHtml(categoryLabel)}${d.academic_year ? `<div class="muted">${escapeHtml(d.academic_year)}</div>` : ""}</td>` +
         `<td>${escapeHtml((d.file_type || "").toUpperCase())}</td>` +
         `<td>${escapeHtml(status)}</td>` +
         `<td>${d.chunk_count ?? 0}</td>` +
@@ -1351,11 +1479,21 @@ async function loadDocuments() {
     tbody.querySelectorAll(".doc-delete-btn").forEach((btn) => {
       btn.addEventListener("click", () => openDeleteDocumentModal(Number(btn.dataset.docId)));
     });
+    renderDocumentPager();
   } catch (err) {
     console.error(err);
-    showToast(err.message || "Could not load documents.", "err");
+    const message = err.message || "Could not load documents.";
+    setDocListError(message);
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="muted">Could not load documents.</td></tr>`;
+    showToast(message, "err");
+    renderDocumentPager();
   }
 }
+
+el("doc-category-filter")?.addEventListener("change", () => {
+  state.docsCategory = el("doc-category-filter").value || "";
+  loadDocuments({ resetPage: true });
+});
 
 el("upload-toggle-btn")?.addEventListener("click", () => {
   el("upload-form")?.classList.toggle("hidden");
@@ -1400,7 +1538,7 @@ el("upload-form")?.addEventListener("submit", async (e) => {
     el("upload-form")?.classList.add("hidden");
     showToast("Document ingested successfully.");
     setUploadStatus("", null);
-    await loadDocuments();
+    await loadDocuments({ resetPage: true });
     if (created?.id) {
       const row = el("doc-table-body")?.querySelector(`[data-doc-id="${created.id}"]`);
       row?.closest("tr")?.classList.add("doc-row-new");

@@ -51,6 +51,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Skip generation/abstention/citation scoring",
     )
     p.add_argument(
+        "--retrieval-mode",
+        choices=("hybrid", "vector", "keyword"),
+        default=None,
+        help="Override RETRIEVAL_MODE for this run (hybrid|vector|keyword)",
+    )
+    p.add_argument(
         "--no-persist",
         action="store_true",
         help="Do not write SQLite/JSON results (still prints summary)",
@@ -87,6 +93,7 @@ def main(argv: list[str] | None = None) -> int:
             retrieval_only=args.retrieval_only,
             persist=not args.no_persist,
             progress=lambda m: print(m),
+            retrieval_mode=args.retrieval_mode,
         )
     except Exception as exc:
         print(f"Evaluation failed: {type(exc).__name__}: {exc}", file=sys.stderr)

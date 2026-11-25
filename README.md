@@ -1,295 +1,90 @@
 # Campus Copilot
 
-Campus Copilot is a retrieval-augmented campus assistant. Students and administrators ask questions about circulars, fees, hostel rules, scholarships, placements, exams and other indexed university documents. Answers are grounded in retrieved passages, cited to source files, and withheld when the corpus is not confident.
+Campus Copilot is a campus assistant. Students and admins ask about circulars, fees, hostel rules, exams, and other uploaded documents. Answers come from retrieved passages and are cited. If the corpus is not confident, the assistant says so instead of guessing.
 
-The supported deployment for this release is **Docker Compose**: Nginx serves the static UI and reverse-proxies the FastAPI API at [http://localhost:8080/](http://localhost:8080/).
+Current release: **v0.2**. The app is a FastAPI backend, a SQLite database, and a static frontend. Gemini does embeddings and answer generation. Open the UI at [http://localhost:8080/](http://localhost:8080/) when using Docker.
 
-## Problem statement
+Do not commit `.env`, `*.db`, or `deploy/data/`. Those files hold the API key, passwords, and uploaded documents. Copy `.env.example` and put your own `GEMINI_API_KEY` and `JWT_SECRET` there.
 
-Campus information is scattered across PDFs, Word files and notices. Students need answers that are accurate, attributable and honest about gaps. Campus Copilot indexes uploaded documents, retrieves the most similar chunks with cosine similarity, and generates a Gemini answer only from that evidence. If similarity stays below a threshold, the assistant abstains instead of guessing.
+## v0.1
 
-## Key features
-
-- Student chat with citations and conversation history
-- Admin document ingest, catalogue, supersession and deletion
-- JWT authentication with separate admin and student login paths
-- Shared academic calendar (admin publish, student view)
-- Evaluation dashboard over persistent Evaluation Framework v2 runs
-- Change-password for authenticated admin and student accounts
-- Dockerized local stack with bind-mounted SQLite and uploads
-
-## Architecture
-
-```
-Browser (http://localhost:8080)
-        │
-        ▼
-Nginx (frontend container)
-  - static HTML/CSS/JS
-  - reverse proxy: /auth, /query, /documents, /admin, …
-        │
-        ▼
-FastAPI / Uvicorn (backend container)
-  - JWT auth, RAG query, ingest, calendar, evaluation
-        │
-        ├── SQLite  /data/campus_copilot.db
-        └── files   /data/uploaded_documents
-              ▲
-              │ bind mounts
-        host: deploy/data/
-```
-
-The frontend is same-origin. `frontend/app.js` uses an empty `API_BASE` so the browser calls `/auth/...` on port 8080; Nginx forwards those paths to `backend:8000`.
-
-## Technology stack
-
-| Layer | Choice |
-|-------|--------|
-| Frontend | HTML, CSS, vanilla JavaScript |
-| Gateway | Nginx Alpine |
-| API | Python 3.12, FastAPI, Uvicorn |
-| Auth | JWT (PyJWT), bcrypt via passlib |
-| Database | SQLite |
-| Embeddings / generation | Google Gemini (`langchain-google-genai`) |
-| Retrieval | NumPy / scikit-learn cosine similarity over stored vectors |
-| Packaging | Docker Compose |
-
-This release does **not** use React, PostgreSQL, Redis, FAISS, or a separate vector database.
-
-## RAG pipeline
-
-1. **Ingest.** An administrator uploads PDF, DOCX, Markdown or TXT. Text is extracted, chunked (`CHUNK_SIZE` / `CHUNK_OVERLAP`), embedded with Gemini, and stored as BLOBs in `chunks` together with document metadata.
-2. **Query.** The student question is embedded with the same model. The retriever ranks chunks by cosine similarity and keeps the top `TOP_K`.
-3. **Abstention.** If the best score is below `CONFIDENCE_THRESHOLD`, the API returns a grounded “not covered” style answer instead of a speculative completion.
-4. **Generation.** Otherwise Gemini is asked to answer using only the retrieved passages. The UI shows cited sources.
-5. **Logging.** Queries, feedback and evaluation runs are written to SQLite for the admin dashboard.
-
-Embeddings and generation share one API key. Startup checks that the query embedder matches the index metadata so a mock index cannot be queried with live Gemini vectors (and vice versa).
-
-## Document ingestion workflow
-
-1. Sign in as an administrator.
-2. Open **Documents** and upload a file with title/category metadata.
-3. The backend stores the original under `DOCUMENTS_DIR`, extracts text, chunks, embeds and indexes immediately.
-4. Students see the catalogue and can retrieve from the new chunks without a restart.
-5. Admins can supersede or permanently delete a document (file, extracted text and index rows).
-
-Docker does **not** auto-run seed or ingest scripts on startup. The persistent database and upload directory are the source of truth.
-
-## Gemini integration
-
-| Setting | Role |
-|---------|------|
-| `GEMINI_API_KEY` | Live embeddings and generation |
-| `GEMINI_EMBEDDING_MODEL` | Default `models/gemini-embedding-001` |
-| `GEMINI_GENERATION_MODEL` | Default `gemini-3.8-flash` |
-| `USE_MOCK_LLM=true` | Deterministic fake embeddings and templated extractive answers (offline tests) |
-
-If the key is missing or left as a placeholder, the backend falls back to mock mode. Retrieval quality and evaluation numbers are only meaningful with a real key and a matching Gemini index.
-
-## Authentication and roles
-
-- **Admin login:** `POST /auth/admin/login` with username and password. Non-admin accounts are rejected even with a valid password.
-- **Student login:** `POST /auth/student/login` with an 11-digit enrollment number and password.
-- Passwords are hashed with **bcrypt** (`app.auth.hash_password` / `verify_password`).
-- Identity for authorization is the JWT `sub` (user id), reloaded from SQLite. Clients cannot set their own role.
-- Public self-registration is disabled. Students are provisioned by an administrator (`backend/scripts/provision_students_TEMPLATE.py`).
-- **Change password:** `POST /auth/change-password` requires the current password. The JWT selects the account; the body must not include a user id.
-
-Local `scripts/seed_users.py` can create a bootstrap admin only when `INITIAL_ADMIN_PASSWORD` is set in the environment. The script does not run at API or Docker startup and never overwrites existing users.
-
-## Student functionality
-
-- Chat with citations and saved conversations
-- Document catalogue (read)
+- Student chat with citations and saved conversations
+- Admin document upload, ingest, catalogue, supersede, and delete
+- JWT login for admins and students, plus change-password
+- No public self-registration
 - Shared academic calendar
-- Profile onboarding for fields the administrator left blank
-- Change password
+- Gemini embeddings with cosine retrieval and a confidence cutoff
+- Evaluation dashboard
+- Docker Compose stack (Nginx on port 8080, API inside the backend container)
 
-## Admin functionality
+## v0.2
 
-- All student-facing chat/documents/calendar views
-- Document upload, ingest, supersession and deletion
-- Calendar event create/update/publish
-- Insights, query logs and feedback
-- Evaluation overview, retrieval analysis, run history
+- Hybrid search: Gemini cosine similarity plus SQLite FTS5 keyword search, fused with Reciprocal Rank Fusion. The confidence cutoff still uses the cosine score.
+- OCR for scanned PDFs and images (Tesseract in the Docker backend)
+- Document catalogue pagination and category filter
+- In-app notifications for students: new or superseded notices, calendar changes, and deadline reminders. No email or SMS.
+- Admin user management: create a student, hand off a one-time setup code, edit the profile, and deactivate the account. Deactivated accounts cannot keep using an old token.
+- A generation timeout so a slow Gemini call does not hang the chat
 
-Admin-only HTTP routes return **403** for student tokens.
+There is still no email delivery. An admin copies the setup code to the student. Public signup stays off.
 
-## Calendar
+## Run locally with Docker
 
-Administrators maintain a single published calendar. Students see the same events. There is no per-student private calendar in this version.
+This is the setup that keeps the frontend and the API on the same address.
 
-## Evaluation framework
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) and start it.
+2. From the project folder, copy the example env file and edit it:
 
-Evaluation Framework v2 lives under `backend/app/evaluation/` and `backend/evaluation/`.
+```powershell
+copy .env.example .env
+```
 
-- Pack **`synthetic_v1`**: fictional campus seed documents and a labeled `benchmark.json`. Safe to publish; it is not a real university corpus.
-- Pack **`university_v1`**: reserved and empty until a genuine annotated corpus exists.
-- `python scripts/evaluate.py --benchmark synthetic_v1` appends a new SQLite run (never overwrites history) and can write JSON under `evaluation/results/` (that folder is gitignored).
-- The admin UI reads persistent runs from SQLite. Do not commit live evaluation history or the production database.
+Set `GEMINI_API_KEY` to your real key, set `JWT_SECRET` to a long random string, and leave `USE_MOCK_LLM=false`. Keep `GEMINI_EMBEDDING_MODEL=models/gemini-embedding-001` once documents have been embedded with that model. If the generation model in the example is out of quota for your key, set `GEMINI_GENERATION_MODEL` to one your key can call.
 
-## Docker architecture
+3. Create the data files, then start:
 
-| Service | Image | Host |
-|---------|--------|------|
-| `frontend` | Nginx 1.27 Alpine | `8080:80` |
-| `backend` | Python 3.12, Uvicorn | internal `8000` |
+```powershell
+New-Item -ItemType Directory -Force deploy\data\uploaded_documents
+if (-not (Test-Path deploy\data\campus_copilot.db)) { New-Item deploy\data\campus_copilot.db -ItemType File }
+docker compose up -d --build
+```
 
-Bind mounts:
+4. Open [http://localhost:8080/](http://localhost:8080/) and hard-refresh once. [http://localhost:8080/health](http://localhost:8080/health) should show `"mock_mode": false`.
 
-| Host | Container |
-|------|-----------|
-| `./deploy/data/campus_copilot.db` | `/data/campus_copilot.db` |
-| `./deploy/data/uploaded_documents` | `/data/uploaded_documents` |
+`docker compose down` stops the containers and keeps `deploy\data`. Do not use `docker compose down -v`.
 
-Compose reads secrets from project-root `.env` (`env_file: .env`).
+The first admin is not created by Compose. With the stack stopped, from `backend` you can run `python scripts/seed_users.py` against `deploy\data\campus_copilot.db` after setting `INITIAL_ADMIN_PASSWORD` in the shell. The script does not overwrite an existing user. After that, admins create students from **User Management** and share the one-time setup code.
 
-## Local installation (without Docker)
+## Run the API without Docker
 
-Requires **Python 3.12**.
+Requires Python 3.12. OCR on the host also needs [Tesseract](https://github.com/tesseract-ocr/tesseract) if you want scanned files indexed.
 
-```bash
+```powershell
 cd backend
-python3.12 -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-cp ../.env.example .env            # or copy backend/.env.example
-# Set GEMINI_API_KEY and JWT_SECRET. For local SQLite use:
-# DATABASE_PATH=./campus_copilot.db
-# DOCUMENTS_DIR=./uploaded_documents
-# Windows PowerShell: $env:INITIAL_ADMIN_PASSWORD = "..."
-export INITIAL_ADMIN_PASSWORD=...
+copy .env.example .env
+```
+
+Edit `backend\.env`: real `GEMINI_API_KEY`, a real `JWT_SECRET`, `USE_MOCK_LLM=false`, `DATABASE_PATH=./campus_copilot.db`, and `DOCUMENTS_DIR=./uploaded_documents`.
+
+```powershell
+$env:INITIAL_ADMIN_PASSWORD = "choose-a-password"
 python scripts/seed_users.py
 uvicorn app.main:app --reload --port 8000
 ```
 
-Serve the UI with a static server **only if** you point `window.CAMPUS_COPILOT_API_BASE` at the API. A bare `python -m http.server` on port 5500 will not proxy `/auth` and login will fail with Method Not Allowed. Prefer Docker on port 8080.
+On macOS or Linux, activate with `source .venv/bin/activate` and use `export INITIAL_ADMIN_PASSWORD=...`.
 
-## Environment variables
+Opening `frontend/index.html` as a file, or with `python -m http.server`, will not proxy `/auth` and login will fail. Prefer Docker on port 8080. If you serve the static files yourself, set `window.CAMPUS_COPILOT_API_BASE = "http://localhost:8000"` before `app.js` loads, and set `CORS_ORIGINS` to that page’s origin.
 
-Copy `.env.example` to `.env`. Do not commit `.env`.
+## Tests
 
-Required for live RAG:
+From `backend` with the virtualenv active:
 
-- `GEMINI_API_KEY`
-- `JWT_SECRET` (replace the placeholder)
-
-Also used: `USE_MOCK_LLM`, `GEMINI_EMBEDDING_MODEL`, `GEMINI_GENERATION_MODEL`, `JWT_EXPIRE_MINUTES`, `DATABASE_PATH`, `DOCUMENTS_DIR`, `CHUNK_SIZE`, `CHUNK_OVERLAP`, `TOP_K`, `CONFIDENCE_THRESHOLD`, `CORS_ORIGINS`. Optional: `INITIAL_ADMIN_PASSWORD` (required only when `scripts/seed_users.py` creates the first admin), `CAMPUS_ADMIN_USERNAME`, `CAMPUS_ADMIN_FULL_NAME`, `TESSERACT_CMD` for host OCR.
-
-## Docker startup
-
-From the repository root (the directory that contains `docker-compose.yml`):
-
-```bash
-cp .env.example .env
-# Edit .env: GEMINI_API_KEY, JWT_SECRET, USE_MOCK_LLM=false
-
-# Persistent files must exist on the host before the first start.
-mkdir -p deploy/data/uploaded_documents
-# Use an existing SQLite file, or create an empty one that init_db will migrate:
-#   (Windows)  New-Item deploy/data/campus_copilot.db -ItemType File
-#   (Unix)     touch deploy/data/campus_copilot.db
-
-docker compose up -d --build
-```
-
-Check services:
-
-```bash
-docker compose ps
-```
-
-View logs:
-
-```bash
-docker compose logs -f
-```
-
-Stop services (keeps bind-mounted data):
-
-```bash
-docker compose down
-```
-
-**Do not run `docker compose down -v` for normal work.** This stack uses host bind mounts under `deploy/data/`, but `-v` removes named volumes and is unsafe if volumes are added later. Persistent storage is required for SQLite and uploaded documents; image layers are not a backup.
-
-## How to access the application
-
-- UI: [http://localhost:8080/](http://localhost:8080/)
-- Health (via Nginx): [http://localhost:8080/health](http://localhost:8080/health)
-
-Student sign-in uses enrollment number. Admin sign-in is on the “Admin sign in” panel. Accounts are those already in your local database (or created with the provisioning template). This repository does **not** publish live user passwords.
-
-## Testing
-
-From `backend/` with the project virtualenv:
-
-```bash
+```powershell
 python -m unittest discover -s tests -v
 ```
 
-Tests use a temporary SQLite file and mock Gemini. They do not touch `deploy/data/campus_copilot.db`.
-
-## Backup and restore
-
-Docker bind mounts are not backups. Copy data out before upgrades.
-
-1. `docker compose stop backend`
-2. Copy `deploy/data/campus_copilot.db` with SQLite’s backup API and copy `deploy/data/uploaded_documents/`
-3. Store copies under `deploy/backups/` (gitignored)
-4. Restore by replacing those two paths and running `docker compose up -d`
-
-See `deploy/README-DOCKER.md` for PowerShell examples.
-
-## Known limitations
-
-- **OCR is not enabled in the Docker image.** Tesseract is optional on the host; scanned PDFs without extractable text are not indexed.
-- SQLite is intended for a **single backend instance**.
-- Gemini usage is subject to provider quotas and model availability.
-- Successful password changes **do not revoke** JWTs issued before the change; tokens remain valid until expiry.
-- `synthetic_v1` documents and questions are **fictional test data**.
-- Production hosting still needs HTTPS, a strong `JWT_SECRET`, outbound Gemini access, and durable disks for the database and uploads.
-- Forgot-password / email OTP is not implemented (`POST /auth/password/forgot` returns 501).
-
-## Future improvements
-
-- JWT revocation or password-version claims after password change
-- SMTP-backed password recovery with rate limits
-- HTTPS and hardened secrets for a public host
-- Optional OCR in the container image if scanned circulars become a requirement
-- Annotated `university_v1` evaluation pack for a real corpus
-
-## Project folder structure
-
-```
-Campus-Copilot/
-├── backend/
-│   ├── app/                    FastAPI app, RAG, auth, evaluation
-│   ├── tests/                  unittest suite
-│   ├── scripts/                seed, ingest, evaluate, provision template
-│   ├── evaluation/             packs (synthetic_v1, university_v1)
-│   ├── seed_data/              fictional campus fixtures (safe to publish)
-│   ├── docs/                   operator notes (re-embed, data cleanup)
-│   ├── requirements.txt
-│   ├── Dockerfile
-│   └── .dockerignore
-├── frontend/
-│   ├── index.html
-│   ├── app.js
-│   ├── styles.css
-│   ├── calendar.js
-│   ├── eval-dashboard.js
-│   ├── assets/
-│   ├── Dockerfile
-│   ├── nginx.conf
-│   └── .dockerignore
-├── deploy/
-│   └── README-DOCKER.md
-├── docker-compose.yml
-├── .env.example
-├── .gitignore
-└── README.md
-```
-
-The nested folder `campus_copilot_project/` is an older duplicate of the tree and is **not** part of the release. Local `.env` files, `*.db`, `deploy/data/`, `deploy/backups/`, virtualenvs and uploaded originals stay on disk but are excluded from Git.
+Tests use a temporary database and mock Gemini. They do not touch your real `.env` key or `deploy\data`.

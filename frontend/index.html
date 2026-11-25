@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="styles.css?v=change-password-1" />
+<link rel="stylesheet" href="styles.css?v=notif-ui-3" />
 </head>
 <body>
 
@@ -84,6 +84,28 @@
           Are you an administrator?
           <button type="button" class="text-link subtle" data-show-panel="admin">Admin sign in</button>
         </p>
+        <p class="auth-admin-link">
+          Have a setup code from your administrator?
+          <button type="button" class="text-link subtle" data-show-panel="setup">Set your password</button>
+        </p>
+      </div>
+
+      <div id="setup-panel" class="auth-panel-view hidden">
+        <h2 class="auth-panel-title">Set your password</h2>
+        <p class="auth-panel-subtitle">Enter the one-time code from your administrator. This does not arrive by email.</p>
+        <form id="setup-password-form" class="auth-form" method="post" action="#">
+          <label for="setup-token">Setup code</label>
+          <input type="text" id="setup-token" required autocomplete="off" />
+          <label for="setup-password">New password</label>
+          <input type="password" id="setup-password" required autocomplete="new-password" minlength="8" />
+          <label for="setup-confirm">Confirm password</label>
+          <input type="password" id="setup-confirm" required autocomplete="new-password" minlength="8" />
+          <p id="setup-status" class="form-status hidden" role="status"></p>
+          <button type="submit" class="btn-primary">Save password</button>
+        </form>
+        <p class="auth-switch">
+          <button type="button" class="text-link" data-show-panel="login">← Back to student sign in</button>
+        </p>
       </div>
 
       <!-- Admin login -->
@@ -133,6 +155,22 @@
       <button class="nav-btn" data-view="calendar">Student Calendar</button>
       <button class="nav-btn admin-only hidden" data-view="admin">Admin</button>
     </nav>
+    <div id="notif-bell-wrap" class="notif-bell-wrap student-only hidden">
+      <button
+        type="button"
+        id="notif-bell-btn"
+        class="notif-bell-btn"
+        aria-label="Notifications"
+        aria-haspopup="dialog"
+        aria-expanded="false"
+        aria-controls="notif-panel"
+      >
+        <svg class="notif-bell-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <path fill="currentColor" d="M12 22a2.2 2.2 0 0 0 2.16-1.75h-4.32A2.2 2.2 0 0 0 12 22zm7-6.2V11a7 7 0 1 0-14 0v4.8L3.4 17.6A1 1 0 0 0 4.1 19.2h15.8a1 1 0 0 0 .7-1.6L19 15.8z"/>
+        </svg>
+        <span id="notif-badge" class="notif-badge hidden" aria-hidden="true">0</span>
+      </button>
+    </div>
     <div class="user-menu-wrap">
       <button type="button" id="user-menu-btn" class="user-menu-btn" aria-haspopup="true" aria-expanded="false">
         <span id="user-avatar" class="user-avatar" aria-hidden="true">?</span>
@@ -282,12 +320,22 @@
         <p id="upload-status" class="form-status hidden" role="status"></p>
       </form>
 
+      <div class="doc-toolbar" id="doc-toolbar">
+        <label class="doc-filter-label" for="doc-category-filter">Category</label>
+        <select id="doc-category-filter" aria-label="Filter documents by category">
+          <option value="">All Categories</option>
+        </select>
+        <p id="doc-list-meta" class="muted doc-list-meta" role="status"></p>
+      </div>
+      <p id="doc-list-error" class="form-status err hidden" role="alert"></p>
+
       <table class="doc-table">
         <thead>
           <tr><th>Title</th><th>Category</th><th>Type</th><th>Status</th><th>Chunks</th><th>Uploaded</th><th>File</th></tr>
         </thead>
         <tbody id="doc-table-body"></tbody>
       </table>
+      <div id="doc-pager" class="doc-pager" aria-label="Document pagination"></div>
     </section>
 
     <section id="view-calendar" class="view hidden">
@@ -347,6 +395,7 @@
         <button type="button" class="admin-nav-btn active" data-admin-panel="overview">Overview</button>
         <button type="button" class="admin-nav-btn" data-admin-panel="documents">Document Management</button>
         <button type="button" class="admin-nav-btn" data-admin-panel="calendar">Academic Calendar Management</button>
+        <button type="button" class="admin-nav-btn" data-admin-panel="users">User Management</button>
 
         <button type="button" class="admin-nav-btn admin-nav-parent" id="admin-nav-eval-toggle" aria-expanded="true">
           <span>RAG Evaluation</span>
@@ -378,6 +427,54 @@
           </div>
           <div class="stat-grid" id="overview-stat-grid"></div>
           <div id="overview-eval-banner" class="eval-banner"></div>
+        </div>
+
+        <div id="admin-panel-users" class="admin-panel hidden">
+          <div class="admin-panel-header um-header">
+            <div>
+              <h2>User Management</h2>
+              <p class="admin-panel-sub">Create and manage student accounts. Admins are not listed here.</p>
+            </div>
+            <button type="button" id="um-create-open" class="btn-primary">Create Student</button>
+          </div>
+          <div class="stat-grid um-stats">
+            <div class="stat-card"><span class="muted">Students</span><strong id="um-count-total">—</strong></div>
+            <div class="stat-card"><span class="muted">Active</span><strong id="um-count-active">—</strong></div>
+          </div>
+          <form id="um-filters" class="um-filters">
+            <input type="search" id="um-q" placeholder="Search name, enrollment, or email" />
+            <select id="um-course"><option value="">All courses</option></select>
+            <select id="um-year"><option value="">All years</option></select>
+            <select id="um-status">
+              <option value="">All statuses</option>
+              <option value="active">Active</option>
+              <option value="pending_activation">Pending setup</option>
+              <option value="disabled">Disabled</option>
+            </select>
+            <button type="submit" class="btn-secondary">Search</button>
+          </form>
+          <div class="table-scroll">
+            <table class="um-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Enrollment</th>
+                  <th>Email</th>
+                  <th>Course</th>
+                  <th>Year</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="um-rows"></tbody>
+            </table>
+          </div>
+          <div class="um-pager">
+            <button type="button" id="um-prev" class="btn-secondary">Previous</button>
+            <span id="um-page-label" class="muted"></span>
+            <button type="button" id="um-next" class="btn-secondary">Next</button>
+          </div>
         </div>
 
         <div id="admin-panel-calendar" class="admin-panel hidden">
@@ -686,10 +783,72 @@
   </div>
 </div>
 
+<div id="um-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="um-modal-title">
+  <div class="modal-card um-modal-card">
+    <div class="modal-header">
+      <h2 id="um-modal-title">Create student</h2>
+      <button type="button" id="um-modal-close" class="modal-close" aria-label="Close">×</button>
+    </div>
+    <form id="um-form" class="um-form">
+      <input type="hidden" id="um-edit-id" value="" />
+      <label for="um-name">Full name</label>
+      <input id="um-name" required maxlength="120" placeholder="First and last name" />
+      <label for="um-enrollment">Enrollment number</label>
+      <input id="um-enrollment" inputmode="numeric" maxlength="11" pattern="\d{11}" required />
+      <label for="um-email">Email</label>
+      <input id="um-email" type="email" required />
+      <label for="um-course-input">Course / department</label>
+      <input id="um-course-input" required maxlength="80" />
+      <label for="um-year-input">Academic year</label>
+      <input id="um-year-input" required maxlength="32" placeholder="2026-27" />
+      <label for="um-semester">Semester</label>
+      <input id="um-semester" type="number" min="1" max="12" required />
+      <p id="um-form-error" class="error hidden"></p>
+      <div class="delete-chat-actions">
+        <button type="button" id="um-form-cancel" class="btn-secondary">Cancel</button>
+        <button type="submit" class="btn-primary" id="um-form-submit">Create student</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="um-handoff" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="um-handoff-title">
+  <div class="modal-card um-modal-card">
+    <div class="modal-header">
+      <h2 id="um-handoff-title">One-time setup code</h2>
+      <button type="button" id="um-handoff-close" class="modal-close" aria-label="Close">×</button>
+    </div>
+    <p id="um-handoff-note" class="um-note"></p>
+    <label for="um-handoff-token">Setup code</label>
+    <input id="um-handoff-token" readonly />
+    <p class="muted">Expires <span id="um-handoff-exp"></span>. This code is shown only now.</p>
+    <div class="delete-chat-actions">
+      <button type="button" id="um-handoff-copy" class="btn-secondary">Copy code</button>
+      <button type="button" id="um-handoff-done" class="btn-primary">Done</button>
+    </div>
+  </div>
+</div>
+
 <div id="app-toast" class="app-toast hidden" role="status" aria-live="polite"></div>
 
-<script src="app.js?v=change-password-1"></script>
+<div id="notif-panel" class="notif-panel hidden" role="dialog" aria-modal="false" aria-labelledby="notif-panel-title">
+  <div class="notif-panel-header">
+    <div class="notif-panel-heading">
+      <h2 id="notif-panel-title">Notifications</h2>
+      <span id="notif-unread-label" class="notif-unread-label hidden"></span>
+    </div>
+    <div class="notif-panel-actions">
+      <button type="button" id="notif-mark-all" class="notif-mark-all">Mark all as read</button>
+      <button type="button" id="notif-close" class="notif-close" aria-label="Close notifications">×</button>
+    </div>
+  </div>
+  <div id="notif-list" class="notif-list" aria-live="polite"></div>
+</div>
+
+<script src="app.js?v=doc-pagination-1"></script>
 <script src="calendar.js?v=prod-polish-1"></script>
+<script src="notifications.js?v=3"></script>
 <script src="eval-dashboard.js?v=1"></script>
+<script src="admin-users.js?v=1"></script>
 </body>
 </html>

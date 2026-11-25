@@ -5,6 +5,11 @@ from datetime import datetime
 from typing import Any
 
 from app.database import get_conn, now_iso
+from app.notification_service import (
+    notify_calendar_cancelled,
+    notify_calendar_published,
+    notify_calendar_updated,
+)
 
 EVENT_CATEGORIES = (
     "Examinations",
@@ -156,7 +161,13 @@ def create_event(payload: dict[str, Any], *, admin_id: int) -> dict[str, Any]:
             ),
         )
         event_id = cur.lastrowid
-    return get_event(event_id)  # type: ignore[return-value]
+    created = get_event(event_id)
+    if created:
+        try:
+            notify_calendar_published(created)
+        except Exception:  # noqa: BLE001 — calendar write must not fail on notify
+            pass
+    return created  # type: ignore[return-value]
 
 
 def update_event(event_id: int, payload: dict[str, Any]) -> dict[str, Any] | None:
@@ -206,10 +217,24 @@ def update_event(event_id: int, payload: dict[str, Any]) -> dict[str, Any] | Non
                 event_id,
             ),
         )
-    return get_event(event_id)
+    updated = get_event(event_id)
+    if updated:
+        try:
+            notify_calendar_updated(existing, updated)
+        except Exception:  # noqa: BLE001
+            pass
+    return updated
 
 
 def delete_event(event_id: int) -> bool:
+    existing = get_event(event_id)
+    # Notify while the row still exists so related_event_id FK remains valid;
+    # ON DELETE SET NULL clears the link after the delete.
+    if existing and (existing.get("publication_status") or "") == "published":
+        try:
+            notify_calendar_cancelled(existing)
+        except Exception:  # noqa: BLE001
+            pass
     with get_conn() as conn:
         cur = conn.execute("DELETE FROM academic_events WHERE id = ?", (event_id,))
         return cur.rowcount > 0

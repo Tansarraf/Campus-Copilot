@@ -60,14 +60,20 @@ def ocr_image_path(path: str) -> tuple[str, dict[str, Any]]:
         )
         return "", meta
     try:
-        from PIL import Image
+        from PIL import Image, UnidentifiedImageError
         import pytesseract
 
-        with Image.open(path) as img:
-            # Convert unusual modes so Tesseract can read them.
-            if img.mode not in ("RGB", "L"):
-                img = img.convert("RGB")
-            text = pytesseract.image_to_string(img) or ""
+        try:
+            with Image.open(path) as img:
+                img.load()
+                prepared = _prepare_for_ocr(img)
+                if prepared is None:
+                    raise ValueError("Could not prepare image for OCR")
+                text = pytesseract.image_to_string(prepared, config="--psm 6") or ""
+        except UnidentifiedImageError as exc:
+            meta["extraction_method"] = "ocr_failed"
+            meta["error"] = f"Unreadable or corrupted image: {exc}"
+            return "", meta
         if not text.strip():
             meta["extraction_method"] = "ocr_empty"
         return text.strip(), meta
@@ -76,6 +82,17 @@ def ocr_image_path(path: str) -> tuple[str, dict[str, Any]]:
         meta["extraction_method"] = "ocr_failed"
         meta["error"] = str(exc)
         return "", meta
+
+
+def _prepare_for_ocr(img):
+    """Grayscale + mild contrast boost; keeps OCR reliable on mid-quality scans."""
+    from PIL import Image, ImageOps
+
+    if not isinstance(img, Image.Image):
+        return None
+    if img.mode != "L":
+        img = img.convert("L")
+    return ImageOps.autocontrast(img)
 
 
 def ocr_pil_image(img) -> str:
@@ -87,9 +104,13 @@ def ocr_pil_image(img) -> str:
 
         if not isinstance(img, Image.Image):
             return ""
-        if img.mode not in ("RGB", "L"):
-            img = img.convert("RGB")
-        return (pytesseract.image_to_string(img) or "").strip()
+        prepared = _prepare_for_ocr(img)
+        if prepared is None:
+            return ""
+        # Assume a block of text (circulars / notices), not a single word.
+        return (
+            pytesseract.image_to_string(prepared, config="--psm 6") or ""
+        ).strip()
     except Exception as exc:  # noqa: BLE001
         logger.warning("OCR on rendered page failed: %s", exc)
         return ""
@@ -132,8 +153,8 @@ def ocr_pdf_pages(path: str, page_texts: list[str] | None = None) -> list[dict]:
                 )
                 continue
             page = pdf[i]
-            # ~150 DPI is enough for notices without huge memory use.
-            bitmap = page.render(scale=150 / 72)
+            # 200 DPI balances OCR quality vs memory for multi-page circulars.
+            bitmap = page.render(scale=200 / 72)
             pil = bitmap.to_pil()
             if not isinstance(pil, Image.Image):
                 pil = Image.fromarray(bitmap.to_numpy())

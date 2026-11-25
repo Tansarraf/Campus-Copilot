@@ -101,6 +101,7 @@ def run_evaluation(
     retrieval_only: bool = False,
     persist: bool = True,
     progress=None,
+    retrieval_mode: str | None = None,
 ) -> dict[str, Any]:
     log = progress or (lambda m: None)
     pack = load_benchmark_pack(benchmark_pack)
@@ -110,6 +111,10 @@ def run_evaluation(
         raise ValueError(
             f"Corpus {corpus_id} has no documents yet (reserved pack)."
         )
+
+    mode = (retrieval_mode or config.RETRIEVAL_MODE or "hybrid").strip().lower()
+    if mode not in ("hybrid", "vector", "keyword"):
+        mode = "hybrid"
 
     max_k = max(k_values) if k_values else 5
     retrieve_k = max(top_k or max_k, max_k, 10)
@@ -215,11 +220,30 @@ def run_evaluation(
 
         try:
             t0 = time.perf_counter()
-            chunks, retrieval_ms = similarity_search(
-                item["question"],
-                top_k=retrieve_k,
-                document_ids=corpus.document_ids,
-            )
+            # Keyword IR benchmarks can skip Gemini; production/query path keeps scores.
+            attach_scores = not (retrieval_only and mode == "keyword")
+            chunks, retrieval_ms = None, 0.0
+            last_exc: Exception | None = None
+            for attempt in range(4):
+                try:
+                    chunks, retrieval_ms = similarity_search(
+                        item["question"],
+                        top_k=retrieve_k,
+                        document_ids=corpus.document_ids,
+                        retrieval_mode=mode,
+                        attach_vector_scores=attach_scores,
+                    )
+                    last_exc = None
+                    break
+                except Exception as exc:  # noqa: BLE001 — retry only rate-limit class
+                    last_exc = exc
+                    msg = str(exc).lower()
+                    if attempt < 3 and ("rate limit" in msg or "quota" in msg or "429" in msg):
+                        time.sleep(15 * (attempt + 1))
+                        continue
+                    raise
+            if last_exc is not None:
+                raise last_exc
             retrieval_latencies.append(float(retrieval_ms))
             result["retrieval_latency_ms"] = round(float(retrieval_ms), 3)
         except Exception as exc:
@@ -271,9 +295,14 @@ def run_evaluation(
         metric_buckets["mrr_doc"].append(metrics["mrr_doc"])
         metric_buckets["mrr_chunk"].append(metrics["mrr_chunk"])
 
-        # Answer / abstention path (uses same confidence rule as /query)
-        top_similarity = chunks[0]["score"] if chunks else 0.0
-        confident = top_similarity >= config.CONFIDENCE_THRESHOLD
+        # Answer / abstention path (same as /query: cosine vector_score, not RRF)
+        if chunks:
+            top_similarity = chunks[0].get("vector_score")
+            if top_similarity is None:
+                top_similarity = chunks[0].get("score") or 0.0
+        else:
+            top_similarity = 0.0
+        confident = float(top_similarity) >= config.CONFIDENCE_THRESHOLD
         generation_ms = None
         answer = None
         cited_doc_keys: set[str] = set()
@@ -422,6 +451,8 @@ def run_evaluation(
         ),
         "top_k": retrieve_k,
         "confidence_threshold": config.CONFIDENCE_THRESHOLD,
+        "retrieval_mode": mode,
+        "rrf_k": int(config.RRF_K),
         "retrieval_only": retrieval_only,
         "run_id": run_id,
     }

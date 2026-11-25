@@ -28,8 +28,15 @@ def ask(req: QueryRequest, user: dict = Depends(get_current_user)):
             status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(exc),
         ) from exc
-    top_similarity = chunks[0]["score"] if chunks else 0.0
-    confident = top_similarity >= config.CONFIDENCE_THRESHOLD
+    # Abstention uses cosine vector_score, never raw RRF fusion ranks.
+    if chunks:
+        top = chunks[0]
+        top_similarity = top.get("vector_score")
+        if top_similarity is None:
+            top_similarity = top.get("score") or 0.0
+    else:
+        top_similarity = 0.0
+    confident = float(top_similarity) >= config.CONFIDENCE_THRESHOLD
 
     if confident:
         history = [t.model_dump() for t in req.history]

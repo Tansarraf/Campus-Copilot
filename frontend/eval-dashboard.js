@@ -119,6 +119,10 @@
       }
     }
 
+    if (name === "users" && typeof window.loadAdminUsers === "function") {
+      window.loadAdminUsers();
+    }
+
     if (["overview", "insights", "query-logs", "feedback"].includes(name)) {
       loadAdminInsights().then((data) => {
         if (name === "overview") renderOverviewBanner();

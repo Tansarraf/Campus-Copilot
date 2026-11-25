@@ -54,6 +54,34 @@ class GeminiErrorTests(unittest.TestCase):
         vec = embeddings.embed_text("hello")
         self.assertEqual(len(vec), embeddings.MOCK_DIM)
 
+    def test_generate_answer_times_out_instead_of_hanging(self):
+        import time
+        from unittest.mock import MagicMock
+
+        os.environ["USE_MOCK_LLM"] = "false"
+        os.environ["GEMINI_API_KEY"] = "not-a-real-key-for-unit-test"
+        import importlib
+        import app.config as config
+        import app.generation as generation
+        from app.gemini_errors import GeminiAPIError
+
+        importlib.reload(config)
+        importlib.reload(generation)
+        generation.clear_chat_cache()
+
+        stuck = MagicMock()
+        stuck.invoke.side_effect = lambda *_a, **_k: time.sleep(30)
+
+        with patch.object(generation.config, "USE_MOCK_LLM", False), \
+             patch.object(generation.config, "GEMINI_GENERATION_TIMEOUT_SECONDS", 1), \
+             patch.object(generation, "_get_gemini_chat", return_value=stuck):
+            with self.assertRaises(GeminiAPIError) as ctx:
+                generation.generate_answer(
+                    "When is the exam?",
+                    [{"title": "Calendar", "text": "Exams begin in May."}],
+                )
+        self.assertEqual(ctx.exception.status_hint, "timeout")
+
 
 if __name__ == "__main__":
     unittest.main()

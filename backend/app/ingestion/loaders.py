@@ -18,10 +18,17 @@ from app.ingestion.ocr import (
 def load_pdf(path: str) -> list[dict]:
     from langchain_community.document_loaders import PyPDFLoader
 
-    docs = PyPDFLoader(path).load()
     page_texts: list[str] = []
     units: list[dict] = []
     any_sparse = False
+    text_extract_failed = False
+
+    try:
+        docs = PyPDFLoader(path).load()
+    except Exception:
+        # Corrupt or unreadable via pypdf — still try page-render OCR.
+        docs = []
+        text_extract_failed = True
 
     # Build a dense page list indexed by page number (0-based).
     by_page: dict[int, str] = {}
@@ -45,10 +52,10 @@ def load_pdf(path: str) -> list[dict]:
         else:
             any_sparse = True
 
-    if not any_sparse and units:
+    if not text_extract_failed and not any_sparse and units:
         return units
 
-    # Mixed or scanned PDF: page-level OCR fallback for insufficient pages.
+    # Mixed, scanned, empty, or unreadable PDF: OCR only insufficient pages.
     ocr_units = ocr_pdf_pages(path, page_texts=page_texts if page_texts else None)
     if ocr_units:
         return ocr_units

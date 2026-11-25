@@ -178,6 +178,59 @@ CREATE INDEX IF NOT EXISTS idx_eval_runs_created ON evaluation_runs(created_at);
 CREATE INDEX IF NOT EXISTS idx_eval_q_run ON evaluation_question_results(run_id);
 CREATE INDEX IF NOT EXISTS idx_academic_events_start ON academic_events(start_datetime);
 CREATE INDEX IF NOT EXISTS idx_academic_events_status ON academic_events(publication_status);
+
+-- One-time password setup codes (activation and admin reset). Only the hash is stored.
+CREATE TABLE IF NOT EXISTS account_setup_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL UNIQUE,
+    purpose TEXT NOT NULL CHECK (purpose IN ('activation', 'reset')),
+    expires_at TEXT NOT NULL,
+    used_at TEXT,
+    created_at TEXT NOT NULL,
+    created_by INTEGER REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS admin_audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    admin_user_id INTEGER REFERENCES users(id),
+    action TEXT NOT NULL,
+    target_user_id INTEGER,
+    detail TEXT,
+    created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_setup_tokens_user ON account_setup_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_created ON admin_audit_log(created_at);
+
+-- Per-student in-app notifications (fan-out rows; unique dedupe_key prevents restart duplicates).
+CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    notification_type TEXT NOT NULL
+        CHECK (notification_type IN (
+            'document_new',
+            'document_superseded',
+            'calendar_new',
+            'calendar_updated',
+            'calendar_cancelled',
+            'deadline_reminder'
+        )),
+    related_document_id INTEGER REFERENCES documents(id) ON DELETE SET NULL,
+    related_event_id INTEGER REFERENCES academic_events(id) ON DELETE SET NULL,
+    dedupe_key TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    read_at TEXT
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_notifications_user_dedupe
+    ON notifications(user_id, dedupe_key);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_created
+    ON notifications(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_unread
+    ON notifications(user_id, read_at);
 """
 
 # Created after column migrations so legacy DBs (pre-email column) upgrade safely.
@@ -308,6 +361,16 @@ def migrate_schema(conn: sqlite3.Connection) -> None:
             """UPDATE documents SET document_status = 'active'
                WHERE document_status IS NULL OR document_status = ''"""
         )
+
+    # 6) Keyword index for hybrid retrieval (FTS5). Soft-fail if unavailable.
+    try:
+        from app.fts_index import ensure_chunks_fts
+
+        ensure_chunks_fts(conn)
+    except Exception as exc:  # noqa: BLE001 — startup must not die on FTS issues
+        import logging
+
+        logging.getLogger(__name__).warning("chunks_fts setup skipped: %s", exc)
 
 
 def init_db():

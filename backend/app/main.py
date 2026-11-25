@@ -11,6 +11,7 @@ from app.embedding_validation import (
     diagnose_embedding_alignment,
     assert_startup_embedding_alignment,
 )
+from app.notification_service import start_deadline_reminder_scheduler
 from app.routers import (
     admin_router,
     auth_router,
@@ -19,8 +20,10 @@ from app.routers import (
     documents_router,
     evaluation_admin_router,
     feedback_router,
+    notifications_router,
     query_router,
 )
+from app.routers.students_admin_router import register_public_setup, router as students_admin_router
 
 logger = logging.getLogger("campus_copilot")
 
@@ -68,6 +71,10 @@ def on_startup():
         # Fail startup so /query cannot run under the wrong embedder.
         logger.error("Embedding index mismatch at startup: %s", exc)
         raise
+    try:
+        start_deadline_reminder_scheduler()
+    except Exception:  # noqa: BLE001 — notifications must not block boot
+        logger.exception("Deadline reminder scheduler failed to start")
 
 
 @app.get("/health")
@@ -84,6 +91,7 @@ def health():
     }
 
 
+register_public_setup(auth_router.router)
 app.include_router(auth_router.router)
 app.include_router(query_router.router)
 app.include_router(conversations_router.router)
@@ -93,4 +101,6 @@ app.include_router(admin_router.router)
 app.include_router(evaluation_admin_router.router)
 app.include_router(calendar_router.student_router)
 app.include_router(calendar_router.admin_router)
+app.include_router(notifications_router.router)
+app.include_router(students_admin_router)
 
